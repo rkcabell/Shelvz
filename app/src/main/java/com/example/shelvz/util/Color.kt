@@ -1,4 +1,4 @@
-package com.example.shelvz.ui.theme
+package com.example.shelvz.util
 
 import androidx.compose.ui.graphics.Color
 
