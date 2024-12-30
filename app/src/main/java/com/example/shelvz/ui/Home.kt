@@ -60,7 +60,9 @@ import com.example.shelvz.util.ShelvzTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
+
     Scaffold(
+    
         topBar = {
             TopAppBar(
                 navigationIcon = {
@@ -70,6 +72,7 @@ fun HomeScreen(navController: NavController) {
                         modifier = Modifier
                             .padding(start = 8.dp)
                             .size(40.dp)
+
                     )
                 },
                 title = {
@@ -96,6 +99,7 @@ fun HomeScreen(navController: NavController) {
             ) {
                 Text(
                     text = "Shelvz",
+                    color = Color.Black,
                     style = MaterialTheme.typography.headlineMedium,
                     textAlign = TextAlign.Center,
                     fontSize = 36.sp
@@ -104,8 +108,10 @@ fun HomeScreen(navController: NavController) {
                 Button(
                     onClick = { /* Handle button click */ },
                     modifier = Modifier.padding(top = 16.dp)
+
                 ) {
-                    Text("Get Started")
+                    Text("Explore")
+                    Color.Blue
                 }
             }
         }
