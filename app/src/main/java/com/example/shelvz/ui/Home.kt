@@ -58,7 +58,9 @@ import com.example.shelvz.util.ShelvzTheme
 @Composable
 fun HomeScreen(navController: NavController) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Home") }) }
+        topBar = { TopAppBar(
+            title = { Text("Home", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
+        )}
     ) { paddingValues ->
         Button(
             onClick = { },
