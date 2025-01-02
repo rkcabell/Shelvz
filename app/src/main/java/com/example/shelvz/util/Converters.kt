@@ -2,6 +2,7 @@ package com.example.shelvz.util
 
 import androidx.room.TypeConverter
 import java.time.LocalDate
+import java.util.UUID
 
 class Converters {
 
@@ -25,5 +26,25 @@ class Converters {
     @TypeConverter
     fun toLocalDate(dateString: String): LocalDate {
         return LocalDate.parse(dateString) // Convert String to LocalDate
+    }
+
+    // Convert the map to a single string: "UUID1:Review1|UUID2:Review2|..."
+    @TypeConverter
+    fun fromReviewsMap(map: Map<UUID, String?>): String {
+        return map.entries.joinToString(separator = "|") { entry ->
+            "${entry.key}:${entry.value ?: ""}" // Handle null reviews as empty strings
+        }
+    }
+
+    // Convert the string back to a map
+    @TypeConverter
+    fun toReviewsMap(value: String): Map<UUID, String?> {
+        if (value.isEmpty()) return emptyMap()
+        return value.split("|").associate {
+            val parts = it.split(":")
+            val uuid = UUID.fromString(parts[0]) // First part is the UUID
+            val review = if (parts.size > 1 && parts[1].isNotEmpty()) parts[1] else null // Handle empty or null reviews
+            uuid to review
+        }
     }
 }
