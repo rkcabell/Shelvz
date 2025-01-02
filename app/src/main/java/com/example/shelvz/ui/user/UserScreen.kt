@@ -183,11 +183,6 @@ fun MenuItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
     }
 }
 
-//TODO( Work on Database )
-
-// fun BioSection(
-//    userId: Int,
-//    userViewModel: UserViewModel) )
 
 @OptIn(FlowPreview::class)
 @Composable
