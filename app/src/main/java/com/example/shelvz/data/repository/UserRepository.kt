@@ -15,5 +15,7 @@ class UserRepository(private val userDao: UserDao) {
     suspend fun updateBio(userId: UUID, newBio: String) = userDao.updateBio(userId, newBio)
     suspend fun getUserBio(userId: UUID) = userDao.getUserById(userId)
     suspend fun getRatedMedia(userId: UUID) = userDao.getRatedMedia(userId)
-    suspend fun updateRatedMedia(userId: UUID, updatedRatings: Map<UUID, Float>) = userDao.updateRatedMedia(userId, updatedRatings)
+    suspend fun updateRatedMedia(userId: UUID, updatedRatings: Map<UUID, Float?>) = userDao.updateRatedMedia(userId, updatedRatings)
+    suspend fun updateReviewedMedia(userId: UUID, updatedReviews: Map<UUID, String?>) = userDao.updateReviewedMedia(userId, updatedReviews)
+
 }

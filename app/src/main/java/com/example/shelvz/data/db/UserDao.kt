@@ -19,7 +19,10 @@ interface UserDao {
     suspend fun getRatedMedia(userId: UUID): Map<UUID, Float>
 
     @Query("UPDATE users SET ratedMedia = :updatedRatings WHERE id = :userId")
-    suspend fun updateRatedMedia(userId: UUID, updatedRatings: Map<UUID, Float>)
+    suspend fun updateRatedMedia(userId: UUID, updatedRatings: Map<UUID, Float?>)
+
+    @Query("UPDATE users SET reviewedMedia = :updatedReviews WHERE id = :userId")
+    suspend fun updateReviewedMedia(userId: UUID, updatedReviews: Map<UUID, String?>)
 
     //CRUD
 

@@ -24,6 +24,10 @@ class UserViewModel(private val userRepository: UserRepository) : ViewModel() {
     private val _ratedMedia = MutableLiveData<Map<UUID, Float>>()
     val ratedMedia: LiveData<Map<UUID, Float>> get() = _ratedMedia
 
+    // LiveData to observe reviewed media
+    private val _userReviews = MutableLiveData<Map<UUID, String?>>()
+    val userReviews: LiveData<Map<UUID, String?>> get() = _userReviews
+
     // Insert a new user
     fun insertUser(user: User) {
         viewModelScope.launch {
@@ -63,14 +67,37 @@ class UserViewModel(private val userRepository: UserRepository) : ViewModel() {
     }
 
     // Add or update a media rating
-    fun addOrUpdateRating(userId: UUID, mediaId: UUID, rating: Float) {
+    fun addOrUpdateRating(userId: UUID, mediaId: UUID, rating: Float?) {
         viewModelScope.launch {
             val currentRatings = _ratedMedia.value?.toMutableMap() ?: mutableMapOf()
-            currentRatings[mediaId] = rating // Add or update the rating
+            if (rating != null) {
+                currentRatings[mediaId] = rating
+            } else {
+                // Remove the rating if it's null
+                currentRatings.remove(mediaId)
+            }
 
             // Update in repository and LiveData
             userRepository.updateRatedMedia(userId, currentRatings)
             _ratedMedia.postValue(currentRatings)
+        }
+    }
+
+    // Add or update a media rating
+    fun addOrUpdateReview(userId: UUID, mediaId: UUID, review: String?) {
+        viewModelScope.launch {
+            val currentReviews = _userReviews.value?.toMutableMap() ?: mutableMapOf()
+
+            if (review != null) {
+                currentReviews[mediaId] = review
+            } else {
+                // Remove the review if it's null
+                currentReviews.remove(mediaId)
+            }
+
+            // Update in repository and LiveData
+            userRepository.updateReviewedMedia(userId, currentReviews)
+            _userReviews.postValue(currentReviews)
         }
     }
 }

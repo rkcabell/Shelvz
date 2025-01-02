@@ -16,5 +16,7 @@ data class User(
     val dob: LocalDate, //TypeConverter to JSON
     val bio: String,
     val library: List<Media>, //TypeConverter to JSON
-    val ratedMedia: Map<UUID, Float> // Map of Media UUID to Ratings
+    // Map of Media UUID to Ratings | 0.0 to 5.0 in increments of 0.5 where null is unrated
+    val ratedMedia: Map<UUID, Float?>,
+    val reviewedMedia: Map<UUID, String?>
 )
