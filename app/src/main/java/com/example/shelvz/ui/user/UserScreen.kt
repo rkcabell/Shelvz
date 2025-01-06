@@ -1,5 +1,6 @@
 package com.example.shelvz.ui.user
 
+import BottomBar
 import com.example.shelvz.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,9 +54,11 @@ import kotlinx.coroutines.flow.debounce
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserScreen(navController: NavController) {
-//    TODO( Work on Database)
-    //val userViewModel: UserViewModel = viewModel() // Using default ViewModelProvider
+//    val userViewModel: UserViewModel = viewModel() // Using default ViewModelProvider
+//    val userData by userViewModel.userData.collectAsState()
+
     Scaffold(
+        bottomBar = { BottomBar(navController)},
         topBar = {
             TopAppBar(
                 title = { Text(text = "")},
@@ -119,6 +123,7 @@ fun UserScreen(navController: NavController) {
                     // Username and Stats
                     Text(
                         text = "Username",
+//                        text = userViewModel.getUsername(userData.name),
                         style = MaterialTheme.typography.headlineSmall,
                         color = Color.White
                     )

@@ -1,6 +1,7 @@
 package com.example.shelvz.ui.upload
 
 
+import BottomBar
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -11,6 +12,7 @@ import androidx.navigation.NavController
 @Composable
 fun UploadScreen(navController: NavController) {
     Scaffold(
+        bottomBar = { BottomBar(navController)},
         topBar = { TopAppBar(title = { Text("Upload") }) }
     ) { paddingValues ->
         Button(

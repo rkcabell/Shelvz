@@ -1,4 +1,4 @@
-package com.example.shelvz.ui.details
+package com.example.shelvz.ui.user
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController

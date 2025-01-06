@@ -8,10 +8,16 @@ import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.TypeConverters
 import com.example.shelvz.util.Converters
 
-@Entity(tableName = "movies", foreignKeys = [ForeignKey(entity = Media::class, parentColumns = ["mediaId"], childColumns = ["mediaId"], onDelete = CASCADE)])
+@Entity(tableName = "movies", foreignKeys = [
+    ForeignKey(entity = Media::class,
+        parentColumns = ["mediaId"],
+        childColumns = ["mediaId"], onDelete = CASCADE)
+])
 @TypeConverters(Converters::class)
 data class Movie(
     @PrimaryKey val mediaId: UUID, // One-to-one relationship with Media
     val director: String,
-    val cast: List<String> //TypeConverter to JSON
+    val cast: List<String>,
+    val runtimeMinutes: Int
+    //val imdbId: String
 )

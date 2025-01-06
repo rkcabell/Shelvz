@@ -2,7 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("com.google.devtools.ksp") version "2.1.0-1.0.29" apply false
+    alias(libs.plugins.ksp)
+//    alias(libs.plugins.hilt)
 }
 
 android {
@@ -41,9 +42,13 @@ android {
 }
 
 dependencies {
+    implementation(libs.hilt.android)
+    implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
-//    ksp(libs.androidx.room.compiler)
-
+    implementation(libs.dagger.compiler)
+    ksp(libs.androidx.room.compiler)
+    ksp(libs.dagger.compiler)
+    implementation(libs.gson)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

@@ -1,50 +1,82 @@
 package com.example.shelvz.util
 
 import androidx.room.TypeConverter
+import com.example.shelvz.data.model.Review
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 class Converters {
+    private val formatter = DateTimeFormatter.ISO_LOCAL_DATE
+    private val gson = Gson()
+    private val typeListString = object : TypeToken<List<String>>() {}.type
+    private val typeListUuid = object : TypeToken<List<UUID>>() {}.type
+    private val typeListReview = object : TypeToken<List<Review>>() {}.type
 
-    // Convert List<String> to a single String, separating items by a delimiter
+    // 1) UUID <-> String
     @TypeConverter
-    fun fromStringList(value: List<String>): String {
-        return value.joinToString(separator = "|")
-    }
-
-    // Convert a single String back into a List<String>, splitting by the same delimiter
-    @TypeConverter
-    fun toStringList(value: String): List<String> {
-        return if (value.isEmpty()) emptyList() else value.split("|")
-    }
-
-    @TypeConverter
-    fun fromLocalDate(date: LocalDate): String {
-        return date.toString() // Convert LocalDate to String
+    fun fromUuid(uuid: UUID?): String? {
+        return uuid?.toString()
     }
 
     @TypeConverter
-    fun toLocalDate(dateString: String): LocalDate {
-        return LocalDate.parse(dateString) // Convert String to LocalDate
+    fun toUuid(uuidString: String?): UUID? {
+        return uuidString?.let { UUID.fromString(it) }
     }
 
-    // Convert the map to a single string: "UUID1:Review1|UUID2:Review2|..."
+    // 2) LocalDate <-> String
+    // ISO-8601 yyyy-mm-dd
     @TypeConverter
-    fun fromReviewsMap(map: Map<UUID, String?>): String {
-        return map.entries.joinToString(separator = "|") { entry ->
-            "${entry.key}:${entry.value ?: ""}" // Handle null reviews as empty strings
-        }
+    fun fromLocalDate(date: LocalDate?): String? {
+        return date?.format(formatter)
     }
 
-    // Convert the string back to a map
     @TypeConverter
-    fun toReviewsMap(value: String): Map<UUID, String?> {
-        if (value.isEmpty()) return emptyMap()
-        return value.split("|").associate {
-            val parts = it.split(":")
-            val uuid = UUID.fromString(parts[0]) // First part is the UUID
-            val review = if (parts.size > 1 && parts[1].isNotEmpty()) parts[1] else null // Handle empty or null reviews
-            uuid to review
-        }
+    fun toLocalDate(dateString: String?): LocalDate? {
+        return dateString?.let { LocalDate.parse(it, formatter) }
     }
+
+
+    // 3) List<String> <-> JSON
+    @TypeConverter
+    fun fromStringList(list: List<String>?): String? {
+        return gson.toJson(list)
+    }
+
+    @TypeConverter
+    fun toStringList(json: String?): List<String>? {
+        return json?.let {
+            gson.fromJson<List<String>>(it, typeListString)
+        } ?: emptyList()
+
+    }
+
+    // 4) List<UUID> <-> JSON
+    @TypeConverter
+    fun fromUuidList(list: List<UUID>?): String? {
+        return gson.toJson(list)
+    }
+
+    @TypeConverter
+    fun toUuidList(json: String?): List<UUID>? {
+        return json?.let {
+            gson.fromJson<List<UUID>>(it, typeListUuid)
+        } ?: emptyList()
+    }
+
+    // 5) List<Review> <-> JSON
+    @TypeConverter
+    fun fromReviewList(list: List<Review>?): String? {
+        return gson.toJson(list)
+    }
+
+    @TypeConverter
+    fun toReviewList(json: String?): List<Review>? {
+        return json?.let {
+            gson.fromJson<List<Review>>(it, typeListReview)
+        } ?: emptyList()
+    }
+
 }

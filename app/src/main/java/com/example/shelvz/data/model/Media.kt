@@ -1,9 +1,9 @@
 package com.example.shelvz.data.model
 
+import com.example.shelvz.util.Converters
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
-import com.example.shelvz.util.Converters
 import java.time.LocalDate
 import java.util.UUID
 
@@ -16,7 +16,8 @@ data class Media(
     val genres: List<String>, //TypeConverter to JSON
     val releaseDate: LocalDate,
     val mediaType: MediaType,
-    val overallRating: Float
+    val averageRating: Float,
+    val thumbnailPath: String
 )
 
 enum class MediaType {

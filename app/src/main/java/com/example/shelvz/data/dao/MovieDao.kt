@@ -1,24 +1,22 @@
-package com.example.shelvz.data.db
+package com.example.shelvz.data.dao
 
 import androidx.room.Dao
-import androidx.room.Database
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.RoomDatabase
 import com.example.shelvz.data.model.Movie
-import com.example.shelvz.data.model.User
 import java.util.UUID
 
 @Dao
 interface MovieDao {
 
 
-    @Insert
-    suspend fun insertMovie(movie: Movie): Any
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMovie(movie: Movie): Long
 
     @Delete
-    suspend fun deleteMovie(movie: Movie): Any
+    suspend fun deleteMovie(movie: Movie)
 
     @Query("SELECT * FROM movies WHERE mediaId = :mediaId")
     suspend fun getMovieById(mediaId: UUID): Movie

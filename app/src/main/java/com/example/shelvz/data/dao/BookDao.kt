@@ -1,24 +1,21 @@
-package com.example.shelvz.data.db
+package com.example.shelvz.data.dao
 
 import androidx.room.Dao
-import androidx.room.Database
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.RoomDatabase
 import com.example.shelvz.data.model.Book
-import com.example.shelvz.data.model.Media
-import com.example.shelvz.data.model.User
 import java.util.UUID
 
 @Dao
 interface BookDao {
 
-    @Insert
-    suspend fun insertBook(book: Book): Any
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBook(book: Book): Long
 
     @Delete
-    suspend fun deleteBook(book: Book): Any
+    suspend fun deleteBook(book: Book)
 
     @Query("SELECT * FROM books WHERE mediaId = :mediaId")
     suspend fun getBookById(mediaId: UUID): Book

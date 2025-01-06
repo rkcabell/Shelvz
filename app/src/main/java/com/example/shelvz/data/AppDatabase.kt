@@ -1,23 +1,78 @@
 package com.example.shelvz.data
+import android.content.Context
 import androidx.room.Database
+import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.example.shelvz.data.db.BookDao
-import com.example.shelvz.data.db.MediaDao
-import com.example.shelvz.data.db.MovieDao
-import com.example.shelvz.data.db.UserDao
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.shelvz.data.dao.BookDao
+import com.example.shelvz.data.dao.MediaDao
+import com.example.shelvz.data.dao.MovieDao
+import com.example.shelvz.data.dao.ReviewDao
+import com.example.shelvz.data.dao.UserDao
 import com.example.shelvz.data.model.Book
 import com.example.shelvz.data.model.Media
 import com.example.shelvz.data.model.Movie
+import com.example.shelvz.data.model.Review
 import com.example.shelvz.data.model.User
 import com.example.shelvz.util.Converters
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Inject
+import javax.inject.Singleton
 
-@Database(entities = [User::class, Media::class, Book::class, Movie::class], version = 1)
+@Database(entities = [User::class, Media::class, Book::class, Movie::class, Review::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun mediaDao(): MediaDao
     abstract fun bookDao(): BookDao
     abstract fun movieDao(): MovieDao
+    abstract fun reviewDao(): ReviewDao
 }
 
+/**
+ * Provides the singleton instance of AppDatabase.
+ */
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseProvider {
+    @Provides
+    @Singleton
+    fun getDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder(
+            context.applicationContext,
+            AppDatabase::class.java,
+            "app_database"
+        )
+//            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .fallbackToDestructiveMigration()
+            .build()
+    }
+
+    @Provides
+    fun provideUserDao(database: AppDatabase): UserDao {
+        return database.userDao()
+    }
+    @Provides
+    fun provideMediaDao(database: AppDatabase): MediaDao {
+        return database.mediaDao()
+    }
+    @Provides
+    fun provideMovieDao(database: AppDatabase): MovieDao {
+        return database.movieDao()
+    }
+    @Provides
+    fun provideBookDao(database: AppDatabase): BookDao {
+        return database.bookDao()
+    }
+    @Provides
+    fun provideReviewDao(database: AppDatabase): ReviewDao {
+        return database.reviewDao()
+    }
+
+}

@@ -1,4 +1,5 @@
 package com.example.shelvz.ui.library
+import BottomBar
 import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.LocalIndication
@@ -39,6 +40,7 @@ import com.example.shelvz.util.ShelvzTheme
 @Composable
 fun LibraryScreen(navController: NavController) {
     Scaffold(
+        bottomBar = {BottomBar(navController)},
         topBar = { LibraryAppBar() }
     ) {paddingValues ->
         LibraryPage(modifier = Modifier.padding(paddingValues))

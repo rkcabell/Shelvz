@@ -1,4 +1,5 @@
 package com.example.shelvz.ui.discover
+import BottomBar
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -15,13 +16,14 @@ import androidx.navigation.NavController
 @Composable
 fun DiscoverScreen(navController: NavController) {
     Scaffold(
+        bottomBar = { BottomBar(navController)},
         topBar = { TopAppBar(title = { Text("Discover", fontWeight = FontWeight.Bold, fontSize = 40.sp) }) }
     ) { paddingValues ->
         Button(
-            onClick = { navController.navigate("destination_route") },
+            onClick = { navController.navigate("details") },
             modifier = Modifier.padding(paddingValues)
         ) {
-            Text("Navigate")
+            Text("Click to Crash App")
         }
     }
 }
