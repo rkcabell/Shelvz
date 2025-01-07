@@ -10,12 +10,12 @@ sealed class Screen(val route: String, val label: String) {
     object Discover : Screen("discover", "Discover")
     object Library : Screen("library", "Library")
     object User : Screen("user", "User")
+    object CreateAccount : Screen("createAccount", "Create Account")
 }
 
 @Composable
 fun BottomBar(navController: NavController) {
     val items = listOf(
-        Screen.Login,
         Screen.Discover,
         Screen.Library,
         Screen.User
@@ -37,3 +37,4 @@ fun BottomBar(navController: NavController) {
         }
     }
 }
+

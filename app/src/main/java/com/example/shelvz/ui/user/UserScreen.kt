@@ -28,12 +28,10 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,8 +46,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.debounce
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,13 +65,13 @@ fun UserScreen(navController: NavController) {
                         tint = Color.Black)
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Blue,
+//                    containerColor = Color.Blue,
                     titleContentColor = Color.White
                 )
             ) }
     ) { padding ->
         // Content starts here
-        Column(modifier = Modifier.padding(padding).background(Color.DarkGray)) {
+        Column(modifier = Modifier.padding(padding)) {
             val focusManager = LocalFocusManager.current
 
             // Profile Section
@@ -113,7 +109,6 @@ fun UserScreen(navController: NavController) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black)
                     .clickable { focusManager.clearFocus() }
                     .padding(top = 50.dp) // Place below the profile picture
             ) {
@@ -189,7 +184,6 @@ fun MenuItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
 }
 
 
-@OptIn(FlowPreview::class)
 @Composable
 fun BioSection(
 ) {

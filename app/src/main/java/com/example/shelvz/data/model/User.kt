@@ -13,12 +13,11 @@ data class User(
     @PrimaryKey val id: UUID,
     val name: String,
     val email: String,
-    val password: String, // Store hashed password or token
+    val password: String,
     val profilePic: String? = null, // Path or URL for profile picture
     val dob: LocalDate,
     val bio: String,
-    val library: List<String>,              // Paths to media files on device
-    //val reviewCount: Int,                 // Calculated at runtime or stored as derived column in database
+    val library: List<String>, // Paths to media files on device
     val favorites: List<UUID>,
     val favoriteGenres: List<String> //enum?
 )

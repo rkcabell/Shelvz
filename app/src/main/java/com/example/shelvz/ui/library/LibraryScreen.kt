@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.*
@@ -215,9 +216,6 @@ fun LibraryPagePreview() {
 
 
 
-
-
-
 /*
 query: Tracks the search text entered by the user.
 onQueryChange: Updates the search text when the user types.
@@ -253,32 +251,63 @@ private fun LibraryAppBar(
                 }
             }
     ) {
-        SearchBar(
-            query = queryText,
+        MediaSearchBar(queryText = queryText,
             onQueryChange = { queryText = it },
-            onSearch = {/* handle search */},
-            active = isExpanded,
-            onActiveChange = { isExpanded = it },
-            enabled = true,
-            placeholder = {
-                Text(stringResource(id = R.string.search_for_media))
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = null
-                )
-            },
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = stringResource(R.string.account)
-                )
-            },
-            interactionSource = remember { MutableInteractionSource() },
-            modifier = if (isExpanded) Modifier.fillMaxWidth() else Modifier
-        ) {
-            // Additional content for expanded SearchBar (if any)
+            isExpanded = isExpanded,
+            onExpandedChange = { isExpanded = it })
+    }
+}
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MediaSearchBar(
+    queryText: String,
+    onQueryChange: (String) -> Unit,
+    isExpanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit
+) {
+
+    SearchBar(
+        inputField = {
+            TextField(
+                value = queryText,
+                onValueChange = onQueryChange,
+                placeholder = { Text(stringResource(id = R.string.search_for_media)) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = stringResource(id = R.string.search_for_media)
+                    )
+                },
+                trailingIcon = {
+                    Row {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Clear",
+                            modifier = Modifier.clickable { onQueryChange("") }
+                        )
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = stringResource(id = R.string.account)
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        expanded = isExpanded,
+        onExpandedChange = onExpandedChange,
+        modifier = if (isExpanded) Modifier.fillMaxWidth() else Modifier,
+        tonalElevation = SearchBarDefaults.TonalElevation,
+        shadowElevation = SearchBarDefaults.ShadowElevation,
+        colors = SearchBarDefaults.colors(),
+    ) {
+        // Content for expanded SearchBar
+        Column {
+            Text(text = "Suggested Media 1")
+            Text(text = "Suggested Media 2")
         }
     }
 }

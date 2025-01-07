@@ -26,6 +26,9 @@ interface UserDao {
     @Query("SELECT name FROM users WHERE id = :userId")
     suspend fun getUsername(userId: UUID): String
 
+    @Query("SELECT * FROM users WHERE name = :name AND password = :password")
+    suspend fun getUserByLogin(name: String, password: String): User
+
     //CRUD
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
@@ -39,5 +42,7 @@ interface UserDao {
 
     @Delete
     suspend fun deleteUser(user: User)
+
+
 
 }

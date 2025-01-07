@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 //    alias(libs.plugins.hilt)
+//    id("com.google.dagger.hilt.android") version "2.53.1"
 }
 
 android {
@@ -42,12 +43,18 @@ android {
 }
 
 dependencies {
+    implementation(libs.bcrypt)
+    implementation(libs.androidx.datastore)
+    implementation(libs.hilt.navigation)
     implementation(libs.hilt.android)
+//    implementation(libs.hilt.gradle)
+//    implementation(libs.hilt.compiler)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
     implementation(libs.dagger.compiler)
     ksp(libs.androidx.room.compiler)
     ksp(libs.dagger.compiler)
+//    ksp(libs.hilt.compiler)
     implementation(libs.gson)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

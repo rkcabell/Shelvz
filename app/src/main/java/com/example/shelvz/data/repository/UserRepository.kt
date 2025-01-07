@@ -2,6 +2,7 @@ package com.example.shelvz.data.repository
 import com.example.shelvz.data.dao.UserDao
 import com.example.shelvz.data.model.User
 import com.example.shelvz.util.Result
+import org.mindrot.jbcrypt.BCrypt
 import java.util.UUID
 import javax.inject.Inject
 
@@ -61,6 +62,20 @@ class UserRepository @Inject constructor(private val userDao: UserDao) {
         return try {
             val name = userDao.getUsername(userId)
             Result.Success(name)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    suspend fun login(name: String, password: String): com.example.shelvz.util.Result<User> {
+        return try {
+            val user = userDao.getUserByLogin(name, password)
+            if (BCrypt.checkpw(password, user.password)) {
+                Result.Success(user)
+            }
+            else {
+                Result.Error(Exception("Invalid username or password"))
+            }
         } catch (e: Exception) {
             Result.Error(e)
         }
