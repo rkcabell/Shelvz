@@ -19,6 +19,8 @@ interface UserDao {
     @Query("UPDATE users SET bio = :newBio WHERE id = :userId")
     suspend fun updateBio(userId: UUID, newBio: String)
 
+    @Query("SELECT * FROM users WHERE name = :name LIMIT 1")
+    suspend fun getUserByName(name: String): User?
 
     @Query("SELECT * FROM users WHERE email = :email")
     suspend fun getUserByEmail(email: String): User?

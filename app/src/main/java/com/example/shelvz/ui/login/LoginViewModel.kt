@@ -23,9 +23,14 @@ class LoginViewModel @Inject constructor(private val userRepository: UserReposit
         }
     }
 
-    fun validateLogin(name: String, password: String) {
+    fun validateLogin(username: String, password: String) {
         viewModelScope.launch {
-            _loginResult.value = userRepository.login(name, password)
+            try {
+                val result = userRepository.login(username, password)
+                _loginResult.value = result
+            } catch (e: Exception) {
+                _loginResult.value = com.example.shelvz.util.Result.Error(e)
+            }
         }
     }
 }

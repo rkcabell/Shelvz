@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,17 +43,20 @@ fun LoginScreen(navController: NavController, loginViewModel: LoginViewModel = h
     val loginResult by loginViewModel.loginResult.collectAsState()
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     LaunchedEffect(loginResult) {
         when (val result = loginResult) {
             is Result.Success -> {
-                // Navigate to Library or other screen
+                isLoading = false
                 navController.navigate("library") {
                     popUpTo("login") { inclusive = true }
                 }
             }
             is Result.Error -> {
-                // Show error message
+                isLoading = false
+//                errorMessage = result.exception.message ?: "Login failed. Please try again."
                 result.exception.message?.let { Log.e("LoginScreen", it) }
             }
             else -> { /* Do nothing */ }
@@ -97,11 +103,25 @@ fun LoginScreen(navController: NavController, loginViewModel: LoginViewModel = h
 
             // Login Button
             Button(
-                onClick = { loginViewModel.validateLogin(username, password) },
-//                onClick = { viewModel.validateLogin(username, password) },
-                modifier = Modifier.fillMaxWidth()
+                onClick = {
+                    if (username.isNotBlank() && password.isNotBlank()) {
+                        isLoading = true
+                        loginViewModel.validateLogin(username, password)
+                    } else {
+                        errorMessage = "Username and password cannot be empty."
+                    }
+                          },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
             ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
                 Text(text = "Login")
+            }
             }
 
             TextButton(

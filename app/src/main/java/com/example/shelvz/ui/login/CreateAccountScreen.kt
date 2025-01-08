@@ -92,7 +92,7 @@ fun CreateAccountScreen(navController: NavHostController, loginViewModel: LoginV
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
-                isError = !passwordsMatch,
+                isError = !passwordsMatch && password.isNotBlank(),
                 trailingIcon = {
                     if (!passwordsMatch && verifyPassword.isNotBlank()) {
                         Icon(

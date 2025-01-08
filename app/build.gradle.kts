@@ -3,8 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
-//    alias(libs.plugins.hilt)
-//    id("com.google.dagger.hilt.android") version "2.53.1"
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -43,36 +42,42 @@ android {
 }
 
 dependencies {
-    implementation(libs.bcrypt)
-    implementation(libs.androidx.datastore)
+    //hilt
     implementation(libs.hilt.navigation)
     implementation(libs.hilt.android)
-//    implementation(libs.hilt.gradle)
 //    implementation(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
+
+    //room
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
-    implementation(libs.dagger.compiler)
+    implementation(libs.androidx.room.common)
     ksp(libs.androidx.room.compiler)
-    ksp(libs.dagger.compiler)
-//    ksp(libs.hilt.compiler)
+
+    //other
+    implementation(libs.bcrypt)
+    implementation(libs.androidx.datastore)
     implementation(libs.gson)
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
+
+    //compose
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.navigation.compose)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+
+    //core
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.runtime.ktx)
-    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.storage)
-    implementation(libs.androidx.room.common)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)

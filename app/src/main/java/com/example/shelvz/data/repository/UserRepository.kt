@@ -69,15 +69,14 @@ class UserRepository @Inject constructor(private val userDao: UserDao) {
 
     suspend fun login(name: String, password: String): com.example.shelvz.util.Result<User> {
         return try {
-            val user = userDao.getUserByLogin(name, password)
-            if (BCrypt.checkpw(password, user.password)) {
-                Result.Success(user)
-            }
-            else {
-                Result.Error(Exception("Invalid username or password"))
+            val user = userDao.getUserByName(name)
+            if (user != null && BCrypt.checkpw(password, user.password)) {
+                com.example.shelvz.util.Result.Success(user)
+            } else {
+                com.example.shelvz.util.Result.Error(Exception("Invalid username or password"))
             }
         } catch (e: Exception) {
-            Result.Error(e)
+            com.example.shelvz.util.Result.Error(e)
         }
     }
 
