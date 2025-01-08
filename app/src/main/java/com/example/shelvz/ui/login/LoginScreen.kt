@@ -2,6 +2,7 @@ package com.example.shelvz.ui.login
 
 import BottomBar
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,19 +47,20 @@ fun LoginScreen(navController: NavController, loginViewModel: LoginViewModel = h
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     LaunchedEffect(loginResult) {
         when (val result = loginResult) {
-            is Result.Success -> {
+            is com.example.shelvz.util.Result.Success -> {
                 isLoading = false
                 navController.navigate("library") {
                     popUpTo("login") { inclusive = true }
                 }
             }
-            is Result.Error -> {
+            is com.example.shelvz.util.Result.Error -> {
                 isLoading = false
-//                errorMessage = result.exception.message ?: "Login failed. Please try again."
-                result.exception.message?.let { Log.e("LoginScreen", it) }
+                // Show Toast for login failure
+                Toast.makeText(context, "Login failed: ${result.exception.message}", Toast.LENGTH_SHORT).show()
             }
             else -> { /* Do nothing */ }
         }
@@ -104,6 +107,23 @@ fun LoginScreen(navController: NavController, loginViewModel: LoginViewModel = h
             // Login Button
             Button(
                 onClick = {
+
+                    when {
+                        username.isBlank() -> {
+                            Toast.makeText(context, "Username cannot be empty.", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+
+                        password.isBlank() -> {
+                            Toast.makeText(context, "Password cannot be empty.", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                        else -> {
+                            isLoading = true
+                            loginViewModel.validateLogin(username, password)
+                        }
+                    }
+
                     if (username.isNotBlank() && password.isNotBlank()) {
                         isLoading = true
                         loginViewModel.validateLogin(username, password)
@@ -132,24 +152,5 @@ fun LoginScreen(navController: NavController, loginViewModel: LoginViewModel = h
             }
 
         }
-
-        // Handle Login Result
-//        when (loginResult) {
-//            is Result.Success -> {
-//                val user = (loginResult as Result.Success<User>).data
-//                navController.navigate("library")
-//            }
-//            is Result.Error -> {
-//                val error = (loginResult as Result.Error).exception.message ?: "Login failed"
-//                Text(
-//                    text = "Error: $error",
-//                    color = MaterialTheme.colorScheme.error,
-//                    style = MaterialTheme.typography.bodyMedium
-//                )
-//            }
-//            else -> {
-//                // No action needed for initial state
-//            }
-//        }
     }
 }

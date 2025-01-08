@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,25 +45,39 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shelvz.ui.login.LoginViewModel
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserScreen(navController: NavController) {
+fun UserScreen(navController: NavController, loginViewModel: LoginViewModel = hiltViewModel()) {
 //    val userViewModel: UserViewModel = viewModel() // Using default ViewModelProvider
 //    val userData by userViewModel.userData.collectAsState()
+//    val loginResult by loginViewModel.loginResult.collectAsState()
 
     Scaffold(
         bottomBar = { BottomBar(navController)},
         topBar = {
             TopAppBar(
-                title = { Text(text = "")},
+                title = { Text(text = "", color = Color.White)},
                 actions = {
-                    IconButton(onClick = {/* Logout action */}) {}
-                    Icon(Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = "Logout",
-                        tint = Color.Black)
+                    IconButton(
+                        onClick = {
+                            loginViewModel.logout()
+                            navController.navigate("login") {
+                                popUpTo("user") { inclusive = true }
+                            }
+                        }) {
+
+                        Icon(
+                            Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Logout",
+                            tint = Color.White
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
 //                    containerColor = Color.Blue,
@@ -152,7 +167,7 @@ fun MenuItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
 
     if (isClicked.value) {
         LaunchedEffect(Unit) {
-            kotlinx.coroutines.delay(50)
+            delay(50)
             isClicked.value = false // Reset state
         }
     }
