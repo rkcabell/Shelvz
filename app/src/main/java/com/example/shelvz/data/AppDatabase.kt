@@ -25,7 +25,7 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Inject
 import javax.inject.Singleton
 
-@Database(entities = [User::class, Media::class, Book::class, Movie::class, Review::class], version = 1)
+@Database(entities = [User::class, Media::class, Book::class, Movie::class, Review::class], version = 2)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
@@ -33,46 +33,60 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun bookDao(): BookDao
     abstract fun movieDao(): MovieDao
     abstract fun reviewDao(): ReviewDao
+
+
+//    companion object {
+//        val MIGRATION_1_2 = object : Migration(1, 2) {
+//            override fun migrate(db: SupportSQLiteDatabase) {
+//                db.execSQL("ALTER TABLE User ADD COLUMN isLoggedIn INTEGER NOT NULL DEFAULT 0")
+//            }
+//        }
+//    }
+
+
+    /**
+     * Provides the singleton instance of AppDatabase.
+     */
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object DatabaseProvider {
+        @Provides
+        @Singleton
+        fun getDatabase(@ApplicationContext context: Context): AppDatabase {
+            return Room.databaseBuilder(
+                context.applicationContext,
+                AppDatabase::class.java,
+                "app_database"
+            )
+//                .addMigrations(AppDatabase.MIGRATION_1_2)
+                .fallbackToDestructiveMigration()
+                .build()
+        }
+
+
+
+        @Provides
+        fun provideUserDao(database: AppDatabase): UserDao {
+            return database.userDao()
+        }
+        @Provides
+        fun provideMediaDao(database: AppDatabase): MediaDao {
+            return database.mediaDao()
+        }
+        @Provides
+        fun provideMovieDao(database: AppDatabase): MovieDao {
+            return database.movieDao()
+        }
+        @Provides
+        fun provideBookDao(database: AppDatabase): BookDao {
+            return database.bookDao()
+        }
+        @Provides
+        fun provideReviewDao(database: AppDatabase): ReviewDao {
+            return database.reviewDao()
+        }
+
+    }
+
 }
 
-/**
- * Provides the singleton instance of AppDatabase.
- */
-@Module
-@InstallIn(SingletonComponent::class)
-object DatabaseProvider {
-    @Provides
-    @Singleton
-    fun getDatabase(@ApplicationContext context: Context): AppDatabase {
-        return Room.databaseBuilder(
-            context.applicationContext,
-            AppDatabase::class.java,
-            "app_database"
-        )
-//            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
-            .fallbackToDestructiveMigration()
-            .build()
-    }
-
-    @Provides
-    fun provideUserDao(database: AppDatabase): UserDao {
-        return database.userDao()
-    }
-    @Provides
-    fun provideMediaDao(database: AppDatabase): MediaDao {
-        return database.mediaDao()
-    }
-    @Provides
-    fun provideMovieDao(database: AppDatabase): MovieDao {
-        return database.movieDao()
-    }
-    @Provides
-    fun provideBookDao(database: AppDatabase): BookDao {
-        return database.bookDao()
-    }
-    @Provides
-    fun provideReviewDao(database: AppDatabase): ReviewDao {
-        return database.reviewDao()
-    }
-
-}

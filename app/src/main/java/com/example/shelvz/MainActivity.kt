@@ -1,10 +1,8 @@
 package com.example.shelvz
-import android.content.Context
 import android.os.Bundle
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
@@ -19,33 +17,25 @@ import com.example.shelvz.ui.user.UserScreen
 import com.example.shelvz.ui.user.WishlistScreen
 import com.example.shelvz.util.ShelvzTheme
 import dagger.hilt.android.AndroidEntryPoint
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.shelvz.ui.login.CreateAccountScreen
 import com.example.shelvz.ui.login.LoginViewModel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-
+import com.example.shelvz.util.MyResult
 
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val Context.dataStore by preferencesDataStore(name = "user_preferences")
-//    private val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            ShelvzTheme {
+            ShelvzTheme(darkTheme = true) {
                 val navController = rememberNavController()
                 val loginViewModel: LoginViewModel = hiltViewModel()
 
-
-                val isLoggedIn by loginViewModel.isLoggedIn.collectAsState(initial = false)
+                val isLoggedIn by loginViewModel.isLoggedIn.collectAsState()
                 val startDestination = if (isLoggedIn) "library" else "login"
-
                 NavHost(
                     navController = navController,
                     startDestination = startDestination

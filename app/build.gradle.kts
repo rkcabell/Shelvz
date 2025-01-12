@@ -16,6 +16,10 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
+
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -45,6 +49,7 @@ dependencies {
     //hilt
     implementation(libs.hilt.navigation)
     implementation(libs.hilt.android)
+    implementation(libs.material)
 //    implementation(libs.hilt.compiler)
     ksp(libs.hilt.compiler)
 

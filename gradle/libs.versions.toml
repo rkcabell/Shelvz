@@ -21,6 +21,7 @@ hiltNavigation = "1.2.0"
 ksp = "2.1.0-1.0.29"
 datastore = "1.1.1"
 bcrypt = "0.4"
+material = "1.12.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -53,6 +54,7 @@ hilt-gradle = { group = "com.google.dagger", name = "hilt-android-gradle-plugin"
 hilt-navigation = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigation" }
 androidx-datastore = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 bcrypt = { group = "org.mindrot", name = "jbcrypt", version.ref = "bcrypt"}
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 
 [plugins]

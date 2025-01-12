@@ -3,7 +3,7 @@ package com.example.shelvz.data.repository
 import com.example.shelvz.data.dao.BookDao
 import com.example.shelvz.data.model.Book
 import java.util.UUID
-import com.example.shelvz.util.Result
+import com.example.shelvz.util.MyResult
 import javax.inject.Inject
 
 /*
@@ -13,39 +13,39 @@ Fetches book details from a remote API or local database.
  */
 
 class BookRepository @Inject constructor(private val bookDao: BookDao) {
-    suspend fun insertBook(book: Book): Result<Unit> {
+    suspend fun insertBook(book: Book): MyResult<Unit> {
         return try {
             bookDao.insertBook(book)
-            Result.Success(Unit)
+            MyResult.Success(Unit)
         } catch (e: Exception) {
-            Result.Error(e)
+            MyResult.Error(e)
         }
     }
 
-    suspend fun getBookById(mediaId: UUID): Result<Book> {
+    suspend fun getBookById(mediaId: UUID): MyResult<Book> {
         return try {
             val book = bookDao.getBookById(mediaId)
-            Result.Success(book)
+            MyResult.Success(book)
         } catch (e: Exception) {
-            Result.Error(e)
+            MyResult.Error(e)
         }
     }
 
-    suspend fun deleteBook(book: Book): Result<Unit> {
+    suspend fun deleteBook(book: Book): MyResult<Unit> {
         return try {
             bookDao.deleteBook(book)
-            Result.Success(Unit)
+            MyResult.Success(Unit)
         } catch (e: Exception) {
-            Result.Error(e)
+            MyResult.Error(e)
         }
     }
 
-    suspend fun getBookSummaryById(mediaId: UUID): Result<String> {
+    suspend fun getBookSummaryById(mediaId: UUID): MyResult<String> {
         return try {
             val summary = bookDao.getBookSummaryById(mediaId)
-            Result.Success(summary)
+            MyResult.Success(summary)
         } catch (e: Exception) {
-            Result.Error(e)
+            MyResult.Error(e)
         }
     }
 

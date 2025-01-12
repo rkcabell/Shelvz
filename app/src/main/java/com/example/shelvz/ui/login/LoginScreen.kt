@@ -2,7 +2,6 @@ package com.example.shelvz.ui.login
 
 import BottomBar
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +15,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -25,6 +26,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,40 +35,53 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.shelvz.data.model.User
-import com.example.shelvz.util.Result
-import org.mindrot.jbcrypt.BCrypt
+import com.example.shelvz.util.MyResult
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(navController: NavController, loginViewModel: LoginViewModel = hiltViewModel()
 ){
-    val loginResult by loginViewModel.loginResult.collectAsState()
+    val isLoggedInResult by loginViewModel.isLoggedIn.collectAsState()
+    val loginState by loginViewModel.loginState.collectAsState()
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     val context = LocalContext.current
 
-    LaunchedEffect(loginResult) {
-        when (val result = loginResult) {
-            is com.example.shelvz.util.Result.Success -> {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(loginState) {
+        when (loginState) {
+            is MyResult.Success -> {
                 isLoading = false
-                navController.navigate("library") {
-                    popUpTo("login") { inclusive = true }
+                if ((loginState as MyResult.Success<Boolean>).data) {
+                    navController.navigate("library") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                } else if (loginViewModel.hasLoginAttempted()) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Login failed: Invalid username or password")
+                    }
                 }
             }
-            is com.example.shelvz.util.Result.Error -> {
+            is MyResult.Error -> {
                 isLoading = false
-                // Show Toast for login failure
-                Toast.makeText(context, "Login failed: ${result.exception.message}", Toast.LENGTH_SHORT).show()
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Error: ${(loginState as MyResult.Error).exception.message}")
+                }
             }
-            else -> { /* Do nothing */ }
+            is MyResult.Loading -> {
+                isLoading = true
+            }
         }
     }
 
-    Scaffold { innerPadding ->
+    Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -107,28 +122,21 @@ fun LoginScreen(navController: NavController, loginViewModel: LoginViewModel = h
             // Login Button
             Button(
                 onClick = {
-
                     when {
                         username.isBlank() -> {
-                            Toast.makeText(context, "Username cannot be empty.", Toast.LENGTH_SHORT)
-                                .show()
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Username cannot be empty.")
+                            }
                         }
-
-                        password.isBlank() -> {
-                            Toast.makeText(context, "Password cannot be empty.", Toast.LENGTH_SHORT)
-                                .show()
+                        password.isBlank() ->  {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("Password cannot be empty.")
+                            }
                         }
                         else -> {
                             isLoading = true
                             loginViewModel.validateLogin(username, password)
                         }
-                    }
-
-                    if (username.isNotBlank() && password.isNotBlank()) {
-                        isLoading = true
-                        loginViewModel.validateLogin(username, password)
-                    } else {
-                        errorMessage = "Username and password cannot be empty."
                     }
                           },
                 modifier = Modifier.fillMaxWidth(),

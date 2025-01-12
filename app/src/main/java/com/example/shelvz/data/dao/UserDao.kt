@@ -9,6 +9,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.shelvz.data.model.Review
 import com.example.shelvz.data.model.User
+import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
 @Dao
@@ -29,7 +30,16 @@ interface UserDao {
     suspend fun getUsername(userId: UUID): String
 
     @Query("SELECT * FROM users WHERE name = :name AND password = :password")
-    suspend fun getUserByLogin(name: String, password: String): User
+    suspend fun getUserByLogin(name: String, password: String): User?
+
+    @Query("SELECT * FROM users WHERE isLoggedIn IS 1 LIMIT 1 ")
+    fun getLoggedInUser(): Flow<User?>
+
+    @Query("UPDATE users SET isLoggedIn = :isLoggedIn WHERE id = :userId")
+    suspend fun updateLoginStatus(userId: UUID, isLoggedIn: Boolean)
+
+    @Query("DELETE FROM users")
+    suspend fun clearAllUsers()
 
     //CRUD
 
@@ -38,9 +48,6 @@ interface UserDao {
 
     @Query("SELECT * FROM users WHERE id = :id")
     suspend fun getUserById(id: UUID): User
-
-    @Update
-    suspend fun updateUser(user: User)
 
     @Delete
     suspend fun deleteUser(user: User)

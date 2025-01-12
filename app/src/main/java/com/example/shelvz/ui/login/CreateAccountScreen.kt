@@ -14,6 +14,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -21,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.shelvz.data.model.User
+import kotlinx.coroutines.launch
 import org.mindrot.jbcrypt.BCrypt
 import java.time.LocalDate
 import java.util.UUID
@@ -43,6 +46,8 @@ fun CreateAccountScreen(navController: NavHostController, loginViewModel: LoginV
     var password by remember { mutableStateOf("") }
     val passwordsMatch = (password == verifyPassword && password.isNotBlank())
     val createButtonEnabled = username.isNotBlank() && passwordsMatch
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
 
@@ -116,24 +121,19 @@ fun CreateAccountScreen(navController: NavHostController, loginViewModel: LoginV
             // Create Account Button
             Button(
                 onClick = {
-                        val hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
-                        val user = User(
-                            id = UUID.randomUUID(),
-                            name = username,
-                            email = "example@example.com", // Replace with actual email input
-                            password = hashedPassword,
-                            dob = LocalDate.now(), // Replace with actual DOB input
-                            bio = "",
-                            library = emptyList(),
-                            favorites = emptyList(),
-                            favoriteGenres = emptyList()
-                        )
-                        loginViewModel.createAccount(user)
-                        Toast.makeText(context, "Account created successfully!", Toast.LENGTH_SHORT).show()
-
+                    if (username.isBlank() || password.isBlank()) {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Username or password cannot be empty.")
+                        }
+                    } else {
+                        loginViewModel.createAccount(username, password)
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Account created successfully!")
+                        }
                         navController.navigate("login") {
                             popUpTo("createAccount") { inclusive = true }
                         }
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = createButtonEnabled

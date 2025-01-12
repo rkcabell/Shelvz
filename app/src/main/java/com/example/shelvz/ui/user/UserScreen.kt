@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -38,25 +40,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+//import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shelvz.data.model.User
 import com.example.shelvz.ui.login.LoginViewModel
 import kotlinx.coroutines.delay
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserScreen(navController: NavController, loginViewModel: LoginViewModel = hiltViewModel()) {
-//    val userViewModel: UserViewModel = viewModel() // Using default ViewModelProvider
-//    val userData by userViewModel.userData.collectAsState()
-//    val loginResult by loginViewModel.loginResult.collectAsState()
+fun UserScreen(navController: NavController,
+               userViewModel: UserViewModel = hiltViewModel(),
+               loginViewModel: LoginViewModel = hiltViewModel()
+) {
+    val user by userViewModel.loggedInUser.collectAsState()
+
+    LaunchedEffect(user) {
+        println("User in UserScreen: $user")
+    }
 
     Scaffold(
         bottomBar = { BottomBar(navController)},
@@ -80,7 +96,6 @@ fun UserScreen(navController: NavController, loginViewModel: LoginViewModel = hi
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-//                    containerColor = Color.Blue,
                     titleContentColor = Color.White
                 )
             ) }
@@ -110,152 +125,239 @@ fun UserScreen(navController: NavController, loginViewModel: LoginViewModel = hi
                         .clip(CircleShape)
                         .align(Alignment.Center)
                 )
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit Profile",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .align(Alignment.BottomEnd)
-                        .clickable(onClick = { /* Handle Click */ })
-                )
             }
 
             // Black Section
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Edit Profile",
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(50))
+                    .align(Alignment.End)
+                    .clickable(onClick = { /* Handle Click */ })
+                    .padding(12.dp),
+                tint = Color.White
+            )
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .clickable { focusManager.clearFocus() }
-                    .padding(top = 50.dp) // Place below the profile picture
+                    .padding(top = 24.dp) // Place below the profile picture
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Username and Stats
-                    Text(
-                        text = "Username",
-//                        text = userViewModel.getUsername(userData.name),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = Color.White
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "39 Books Read", color = Color.White)
-                        Text(text = "Joined December 28, 2024", color = Color.White)
+                    item {
+                        if (user != null) {
+                            Text(
+                                text = user?.name ?: "Unknown User",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = Color.White
+                            )
+                        } else {
+                            Text(text = "Loading user details...")
+                        }
                     }
 
-                    // Bio Section
-                    BioSection()
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = "0 Books Read", color = Color.White)
+                            Text(
+                                text = user?.dob?.let { "Joined ${it.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy"))}" }
+                                    ?: "Joined Unknown Date",
+                                color = Color.White
+                            )
+                        }
+                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    item {
+                        BioSection(
+                            user = user,
+                            updateBio = { newBio -> userViewModel.updateBio(newBio) }
+                        )
+                    }
 
-                    // Menu Options
-                    MenuItem(icon = Icons.Default.Favorite, label = "Wishlist")
-                    MenuItem(icon = Icons.Default.Star, label = "My Favorites")
-                    MenuItem(icon = Icons.Default.MilitaryTech, label = "Achievements")
-                    MenuItem(icon = Icons.Default.Settings, label = "Settings")
+
+                    item {
+                        val menuItems = listOf(
+                            Pair(Icons.Default.Favorite, "Wishlist"),
+                            Pair(Icons.Default.Star, "My Favorites"),
+                            Pair(Icons.Default.MilitaryTech, "Achievements"),
+                            Pair(Icons.Default.Settings, "Settings")
+                        )
+
+                        MenuBlock(menuItems = menuItems) { selectedItem ->
+                            println("Clicked on: $selectedItem") // Handle item click
+                        }
+                    }
+
                 }
             }
         }
     }
 }
 
+//
+//@Composable
+//fun MenuItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
+//    Column(
+//        modifier = Modifier.fillMaxWidth()
+//    ) {
+//
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(horizontal = 16.dp, vertical = 8.dp)
+//                .clip(RoundedCornerShape(12.dp))
+//                .background(MaterialTheme.colorScheme.primary)
+//                .clickable(onClick = onClick)
+//                .padding(horizontal = 16.dp, vertical = 12.dp),
+//            verticalAlignment = Alignment.CenterVertically,
+//            horizontalArrangement = Arrangement.Center
+//        ) {
+//            Icon(
+//                imageVector = icon,
+//                contentDescription = label,
+//                modifier = Modifier.size(24.dp),
+//                tint = Color.White // Icon color
+//            )
+//
+//            Spacer(modifier = Modifier.width(12.dp))
+//
+//            Text(
+//                text = label,
+//                style = MaterialTheme.typography.bodyLarge,
+//                color = Color.White
+//            )
+//        }
+//        // Bottom divider for each item
+//        HorizontalDivider(thickness = 1.dp, color = Color.Gray.copy(alpha = 0.5f))
+//    }
+//}
+
 @Composable
-fun MenuItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
-    val isClicked  = remember { mutableStateOf(false) }
-
-    if (isClicked.value) {
-        LaunchedEffect(Unit) {
-            delay(50)
-            isClicked.value = false // Reset state
-        }
-    }
-
-    Row(
+fun MenuBlock(
+    menuItems: List<Pair<ImageVector, String>>,
+    onItemClick: (String) -> Unit
+) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .background(if (isClicked.value) Color(0xFFFFD700) else Color.Transparent)
-            .clickable {
-                isClicked.value = true
-                onClick()
-            },
-        verticalAlignment = Alignment.CenterVertically
+            .padding(16.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFF3b3b3b)) //ARGB
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            modifier = Modifier.size(24.dp),
-            tint = Color.White
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (isClicked.value) Color.Black else MaterialTheme.colorScheme.surface
-        )
+        menuItems.forEachIndexed { index, item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onItemClick(item.second) }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = item.first,
+                    contentDescription = item.second,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = item.second,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            // Add a divider between items, but not after the last item
+            if (index < menuItems.size - 1) {
+                HorizontalDivider(thickness = 1.dp, color = Color.Gray.copy(alpha = 0.2f))
+            }
+        }
     }
 }
-
 
 @Composable
 fun BioSection(
+    user: User?,
+    updateBio: (String) -> Unit
 ) {
+
     // State to manage the text field's value
-    var bioText by remember { mutableStateOf("Bio") }
+    var bioText by remember { mutableStateOf(user?.bio ?: "") }
     val charCountMax = 200
     val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
-    // Has to be BasicTextField not TextField for decoration box (character count)
-    BasicTextField(
-        value = bioText,
-        onValueChange = {
-            if (it.length <= charCountMax) {
-                bioText = it
-            }
-        },
+    // Update bioText whenever user?.bio changes
+    LaunchedEffect(user?.bio) {
+        bioText = user?.bio ?: ""
+    }
+
+    // BasicTextField with focus change handling
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.LightGray)
-            .focusRequester(focusRequester),
-        textStyle = TextStyle(
-            color = Color.Black
-        ),
-
-        // Character Count Tracker
-        decorationBox = { innerTextField ->
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-            ) {
-                if (bioText.isEmpty()) {
-                    Text(
-                        text = "Enter your bio here..."
-                    )
+            .padding(8.dp) // Add padding around the text field
+    ) {
+        BasicTextField(
+            value = bioText,
+            onValueChange = {
+                if (it.length <= charCountMax) {
+                    bioText = it
                 }
-                innerTextField()
-                Text(
-                    text = "${bioText.length}/${charCountMax}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester)
+                .onFocusChanged { focusState ->
+                    if (!focusState.isFocused && bioText != user?.bio) {
+                        // Call updateBio when the field loses focus and the bio has changed
+                        updateBio(bioText)
+                    }
+                }
+                .onKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyUp && event.key == Key.Enter) {
+                        // Ignore "Enter" key to avoid unintended behavior
+                        true // Consume the event
+                    } else {
+                        false // Pass other key events through
+                    }
+                },
+            textStyle = TextStyle(
+                color = Color.Black,
+                fontSize = MaterialTheme.typography.bodyLarge.fontSize
+            ),
+            decorationBox = { innerTextField ->
+                Box(
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 8.dp, bottom = 4.dp)
-                )
+                        .fillMaxWidth()
+                ) {
+                    if (bioText.isEmpty()) {
+                        Text(
+                            text = "Enter your bio here...",
+                            color = Color.Gray,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    innerTextField()
+                }
             }
-        }
-    )
+        )
+        // Character count below the text field
+        Text(
+            text = "${bioText.length}/$charCountMax",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray,
+            modifier = Modifier.align(Alignment.End) // Align the character count to the right
+        )
+    }
 }
-
-    // Save the bio when focus is lost
-    //TODO( Work on database, put this inside BioSection outside BasicTextField )
-//    LaunchedEffect(Unit) {
-//        snapshotFlow { bioText }
-//            .debounce(500) // Optional debounce to prevent excessive updates
-//            .collect { newBio ->
-//                userViewModel.updateUserBio(userId, newBio)
-//            }
-//    }
-//    )

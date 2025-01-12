@@ -3,7 +3,7 @@ package com.example.shelvz.data.repository
 import com.example.shelvz.data.dao.MovieDao
 import com.example.shelvz.data.model.Movie
 import java.util.UUID
-import com.example.shelvz.util.Result
+import com.example.shelvz.util.MyResult
 import javax.inject.Inject
 
 /*
@@ -13,39 +13,39 @@ Fetches movie details from a remote API or local database.
  */
 
 class MovieRepository @Inject constructor(private val movieDao: MovieDao) {
-    suspend fun insertMovie(movie: Movie): Result<Unit> {
+    suspend fun insertMovie(movie: Movie): MyResult<Unit> {
         return try {
             movieDao.insertMovie(movie)
-            Result.Success(Unit)
+            MyResult.Success(Unit)
         } catch (e: Exception) {
-            Result.Error(e)
+            MyResult.Error(e)
         }
     }
 
-    suspend fun getMovieById(mediaId: UUID): Result<Movie> {
+    suspend fun getMovieById(mediaId: UUID): MyResult<Movie> {
         return try {
             val movie = movieDao.getMovieById(mediaId)
-            Result.Success(movie)
+            MyResult.Success(movie)
         } catch (e: Exception) {
-            Result.Error(e)
+            MyResult.Error(e)
         }
     }
 
-    suspend fun deleteMovie(movie: Movie): Result<Unit> {
+    suspend fun deleteMovie(movie: Movie): MyResult<Unit> {
         return try {
             movieDao.deleteMovie(movie)
-            Result.Success(Unit)
+            MyResult.Success(Unit)
         } catch (e: Exception) {
-            Result.Error(e)
+            MyResult.Error(e)
         }
     }
 
-    suspend fun getMovieSummaryById(mediaId: UUID): Result<String> {
+    suspend fun getMovieSummaryById(mediaId: UUID): MyResult<String> {
         return try {
             val summary = movieDao.getMovieSummaryById(mediaId)
-            Result.Success(summary)
+            MyResult.Success(summary)
         } catch (e: Exception) {
-            Result.Error(e)
+            MyResult.Error(e)
         }
     }
     }
