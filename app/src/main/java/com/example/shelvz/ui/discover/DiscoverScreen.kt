@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.shelvz.util.BookCard
+import com.example.shelvz.util.DetailedBookCard
 import com.example.shelvz.util.MediaSearchBar
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -67,7 +68,7 @@ fun DiscoverPage(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize()
     ) {
         items(placeholderBooks) { book ->
-            BookCard(bookTitle = book)
+            DetailedBookCard(bookTitle = book, "default")
         }
     }
 }

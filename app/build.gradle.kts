@@ -46,6 +46,10 @@ android {
 }
 
 dependencies {
+    //retrofit
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+
     //hilt
     implementation(libs.hilt.navigation)
     implementation(libs.hilt.android)

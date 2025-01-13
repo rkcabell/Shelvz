@@ -22,6 +22,7 @@ ksp = "2.1.0-1.0.29"
 datastore = "1.1.1"
 bcrypt = "0.4"
 material = "1.12.0"
+retrofit = "2.11.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -55,6 +56,9 @@ hilt-navigation = { group = "androidx.hilt", name = "hilt-navigation-compose", v
 androidx-datastore = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 bcrypt = { group = "org.mindrot", name = "jbcrypt", version.ref = "bcrypt"}
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+
 
 
 [plugins]
@@ -63,4 +67,5 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+retrofit = {id = "com.squareup.retrofit2", version.ref = "retrofit" }
 

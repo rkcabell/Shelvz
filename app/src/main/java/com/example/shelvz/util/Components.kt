@@ -133,13 +133,13 @@ fun DetailedBookCard(bookTitle: String, subject: String) {
                 contentDescription = "$subject thumbnail",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.6f),
+                    .weight(0.7f),
                 contentScale = ContentScale.Crop
             )
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.4f)
+                    .weight(0.3f)
                     .padding(8.dp),
                 contentAlignment = Alignment.Center
             ) {
