@@ -6,11 +6,9 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
 sealed class Screen(val route: String, val label: String) {
-    object Login : Screen("login", "Login")
     object Discover : Screen("discover", "Discover")
     object Library : Screen("library", "Library")
     object User : Screen("user", "User")
-    object CreateAccount : Screen("createAccount", "Create Account")
 }
 
 @Composable

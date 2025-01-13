@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.navigation.NavController
 import com.example.shelvz.R
+import com.example.shelvz.util.MediaSearchBar
 import com.example.shelvz.util.ShelvzTheme
 
 // Main Composable
@@ -259,55 +260,3 @@ private fun LibraryAppBar(
 }
 
 
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MediaSearchBar(
-    queryText: String,
-    onQueryChange: (String) -> Unit,
-    isExpanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit
-) {
-
-    SearchBar(
-        inputField = {
-            TextField(
-                value = queryText,
-                onValueChange = onQueryChange,
-                placeholder = { Text(stringResource(id = R.string.search_for_media)) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = stringResource(id = R.string.search_for_media)
-                    )
-                },
-                trailingIcon = {
-                    Row {
-                        Icon(
-                            imageVector = Icons.Default.Clear,
-                            contentDescription = "Clear",
-                            modifier = Modifier.clickable { onQueryChange("") }
-                        )
-                        Icon(
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = stringResource(id = R.string.account)
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        expanded = isExpanded,
-        onExpandedChange = onExpandedChange,
-        modifier = if (isExpanded) Modifier.fillMaxWidth() else Modifier,
-        tonalElevation = SearchBarDefaults.TonalElevation,
-        shadowElevation = SearchBarDefaults.ShadowElevation,
-        colors = SearchBarDefaults.colors(),
-    ) {
-        // Content for expanded SearchBar
-        Column {
-            Text(text = "Suggested Media 1")
-            Text(text = "Suggested Media 2")
-        }
-    }
-}
