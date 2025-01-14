@@ -2,17 +2,23 @@ package com.example.shelvz.data.remote
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-object RetrofitClient {
-    private const val BASE_URL = "https://openlibrary.org/"
-
-    val bookApi: BookApi by lazy {
+class RetrofitClient @Inject constructor() {
+    private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(BookApi::class.java)
+    }
+
+    val bookApi: BookApi by lazy {
+        retrofit.create(BookApi::class.java)
+    }
+
+    companion object {
+        private const val BASE_URL = "https://openlibrary.org/"
     }
 }

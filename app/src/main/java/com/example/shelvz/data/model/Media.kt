@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import java.time.LocalDate
 import java.util.UUID
+import javax.security.auth.Subject
 
 @Entity(tableName = "media")
 @TypeConverters(Converters::class)
@@ -13,7 +14,7 @@ data class Media(
     @PrimaryKey val mediaId: UUID,
     val title: String,
     val summary: String,
-    val genres: List<String>, //TypeConverter to JSON
+    val subject: String,
     val releaseDate: LocalDate,
     val mediaType: MediaType,
     val averageRating: Float,

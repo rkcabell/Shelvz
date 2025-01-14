@@ -25,5 +25,11 @@ interface BookDao {
             "    INNER JOIN books b ON m.mediaId = b.mediaId\n" +
             "    WHERE b.mediaId = :mediaId")
     suspend fun getBookSummaryById(mediaId: UUID): String
+
+    @Query("SELECT * \n" +
+            "    FROM Media m \n" +
+            "    INNER JOIN books b ON m.subject = b.subject\n" +
+            "    WHERE b.subject = :subject")
+    suspend fun getBooksBySubject(subject: String): List<Book>
 }
 
