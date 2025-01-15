@@ -24,7 +24,7 @@ import javax.inject.Inject
 Stores and manages the ModelUiState.
 Fetches or updates data via the ModelRepository.
 Processes UI events and updates the state reactively.
-StateFlow over LiveData
+Simpler Ui state can use MyResult instead of a dedicated UserUiState class
  */
 
 @HiltViewModel

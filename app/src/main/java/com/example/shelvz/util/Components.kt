@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -23,12 +24,19 @@ import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.shelvz.R
@@ -102,26 +110,12 @@ fun BookCard(bookTitle: String) {
 
 @Composable
 fun DetailedBookCard(bookTitle: String, subject: String) {
-    val thumbnailRes = when (subject) {
-        "Arts" -> R.drawable.thumbnail_arts
-        "Animals" -> R.drawable.thumbnail_animals
-        "Fiction" -> R.drawable.thumbnail_fiction
-        "Science & Mathematics" -> R.drawable.thumbnail_science
-        "Business & Finance" -> R.drawable.thumbnail_business
-        "Children's" -> R.drawable.thumbnail_children
-        "History" -> R.drawable.thumbnail_history
-        "Health & Wellness" -> R.drawable.thumbnail_health
-        "Biography" -> R.drawable.thumbnail_biography
-        "Social Sciences" -> R.drawable.thumbnail_social_sciences
-        "Places" -> R.drawable.thumbnail_places
-        "Textbooks" -> R.drawable.thumbnail_textbooks
-        else -> R.drawable.thumbnail_default
-    }
+    val thumbnailRes = Thumbnails.getThumbnail(subject)
 
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(150.dp),
+            .width(150.dp)
+            .height(200.dp),
         elevation = CardDefaults.cardElevation(4.dp),
         shape = RoundedCornerShape(8.dp)
     ) {
@@ -143,8 +137,44 @@ fun DetailedBookCard(bookTitle: String, subject: String) {
                     .padding(8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = bookTitle, fontSize = 16.sp, color = Color.White)
+                Text(
+                    text = bookTitle,
+                    fontSize = 14.sp,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Clip,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DetailedBookCardPreview(){
+    val bookTitle = "Cookbook for dummies"
+    val subject = "Health"
+    DetailedBookCard(bookTitle, subject)
+}
+
+@Preview(showBackground = true)
+@Composable
+fun BookCardPreview(){
+    val bookTitle = "Cookbook for dummies"
+    BookCard(bookTitle)
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MediaSearchBarPreview() {
+    var queryText by remember { mutableStateOf("") }
+    var isExpanded by remember { mutableStateOf(false) }
+
+    MediaSearchBar(
+        queryText = queryText,
+        onQueryChange = { queryText = it },
+        isExpanded = isExpanded,
+        onExpandedChange = { isExpanded = it }
+    )
 }

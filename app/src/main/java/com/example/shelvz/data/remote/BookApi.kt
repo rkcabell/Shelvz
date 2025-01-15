@@ -24,6 +24,7 @@ interface BookApi {
 data class BookJson(
     @PrimaryKey @SerializedName("media_id") val mediaId: UUID,
     @SerializedName("author") val author: String,
+    @SerializedName("title") val title: String,
     @SerializedName("isbn") val isbn: String,
     @SerializedName("publisher") val publisher: String,
     @SerializedName("page_count") val pageCount: Int,
@@ -56,6 +57,7 @@ object BookMapper {
         return Book(
             mediaId = UUID.randomUUID(), // Directly use the UUID from BookJson
             author = json.author,
+            title = json.title,
             isbn = json.isbn,
             publisher = json.publisher,
             pageCount = json.pageCount,

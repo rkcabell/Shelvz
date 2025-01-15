@@ -16,6 +16,7 @@ import com.google.gson.annotations.SerializedName
 data class Book (
     @PrimaryKey val mediaId: UUID,
     val author: String,
+    val title: String,
     val isbn: String,
     val publisher: String,
     val pageCount: Int,
