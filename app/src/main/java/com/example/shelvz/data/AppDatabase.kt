@@ -7,11 +7,13 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.shelvz.data.dao.BookDao
+import com.example.shelvz.data.dao.FileDao
 import com.example.shelvz.data.dao.MediaDao
 import com.example.shelvz.data.dao.MovieDao
 import com.example.shelvz.data.dao.ReviewDao
 import com.example.shelvz.data.dao.UserDao
 import com.example.shelvz.data.model.Book
+import com.example.shelvz.data.model.File
 import com.example.shelvz.data.model.Media
 import com.example.shelvz.data.model.Movie
 import com.example.shelvz.data.model.Review
@@ -25,7 +27,7 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Inject
 import javax.inject.Singleton
 
-@Database(entities = [User::class, Media::class, Book::class, Movie::class, Review::class], version = 4)
+@Database(entities = [User::class, Media::class, Book::class, Movie::class, Review::class, File::class], version = 5)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
@@ -33,6 +35,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun bookDao(): BookDao
     abstract fun movieDao(): MovieDao
     abstract fun reviewDao(): ReviewDao
+    abstract fun fileDao(): FileDao
 
 
 //    companion object {
@@ -85,8 +88,12 @@ abstract class AppDatabase : RoomDatabase() {
         fun provideReviewDao(database: AppDatabase): ReviewDao {
             return database.reviewDao()
         }
+        @Provides
+        fun provideFileDao(database: AppDatabase): FileDao {
+            return database.fileDao()      }
 
     }
+
 
 }
 

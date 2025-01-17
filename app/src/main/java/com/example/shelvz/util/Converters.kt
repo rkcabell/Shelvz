@@ -1,6 +1,7 @@
 package com.example.shelvz.util
 
 import androidx.room.TypeConverter
+import com.example.shelvz.data.model.File
 import com.example.shelvz.data.model.Review
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -48,7 +49,7 @@ class Converters {
     @TypeConverter
     fun toStringList(json: String?): List<String>? {
         return json?.let {
-            gson.fromJson<List<String>>(it, typeListString)
+            gson.fromJson(it, typeListString)
         } ?: emptyList()
 
     }
@@ -62,7 +63,7 @@ class Converters {
     @TypeConverter
     fun toUuidList(json: String?): List<UUID>? {
         return json?.let {
-            gson.fromJson<List<UUID>>(it, typeListUuid)
+            gson.fromJson(it, typeListUuid)
         } ?: emptyList()
     }
 
@@ -75,7 +76,20 @@ class Converters {
     @TypeConverter
     fun toReviewList(json: String?): List<Review>? {
         return json?.let {
-            gson.fromJson<List<Review>>(it, typeListReview)
+            gson.fromJson(it, typeListReview)
+        } ?: emptyList()
+    }
+
+    // 5) List<Review> <-> JSON
+    @TypeConverter
+    fun fromFileList(file: List<File>): String? {
+        return gson.toJson(file)
+    }
+
+    @TypeConverter
+    fun toFileList(json: String?): List<File> {
+        return json?.let {
+            gson.fromJson(it, typeListReview)
         } ?: emptyList()
     }
 
