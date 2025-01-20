@@ -17,7 +17,7 @@ data class User(
     val profilePic: String? = null, // Path or URL for profile picture
     val dob: LocalDate,
     var bio: String,
-    val library: List<String>, // Paths to media files on device
+    val library: List<UserFile>,
     val favorites: List<UUID>,
     val favoriteGenres: List<String>, //enum?
     val isLoggedIn: Boolean = false

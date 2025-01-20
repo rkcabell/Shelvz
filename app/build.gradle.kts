@@ -36,6 +36,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+//        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -46,6 +47,14 @@ android {
 }
 
 dependencies {
+    //readium
+//    implementation(libs.readium.streamer)
+//    implementation(libs.readium.navigator)
+//    implementation(libs.readium.shared)
+//    implementation(libs.pdfium)
+//    implementation(libs.pdfium.android)
+//    coreLibraryDesugaring(libs.desugar.jdk.libs)
+
     //retrofit
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)

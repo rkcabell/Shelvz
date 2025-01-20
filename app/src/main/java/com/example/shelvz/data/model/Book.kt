@@ -8,7 +8,8 @@ import androidx.room.ForeignKey.Companion.CASCADE
 import com.google.gson.annotations.SerializedName
 
 @Entity(tableName = "books", foreignKeys = [
-    ForeignKey(entity = Media::class,
+    ForeignKey(
+        entity = Media::class,
         parentColumns = ["mediaId"],
         childColumns = ["mediaId"],
         onDelete = CASCADE)
