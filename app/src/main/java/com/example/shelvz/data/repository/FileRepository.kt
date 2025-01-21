@@ -30,4 +30,5 @@ class FileRepository @Inject constructor(private val fileDao: FileDao) {
             .getMimeTypeFromExtension(File(uri).extension)
             ?: "application/octet-stream"
     }
+
 }

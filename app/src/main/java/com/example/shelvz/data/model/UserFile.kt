@@ -22,7 +22,8 @@ data class UserFile(
     val userId: UUID,
     val uri: String,
     val name: String,
-    val type: String, // MIME type (e.g., application/epub+zip, application/pdf)
+    val mime: String,
+    val type: String,
     val size: Long,
     val dateAdded: Long = System.currentTimeMillis()
 )

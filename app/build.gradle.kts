@@ -82,6 +82,8 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.navigation.compose)
     androidTestImplementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.foundation)
+//    implementation(libs.accompanist)
 
     //core
     implementation(libs.androidx.core.ktx)

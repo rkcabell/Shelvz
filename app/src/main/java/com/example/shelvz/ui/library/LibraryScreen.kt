@@ -1,31 +1,24 @@
 package com.example.shelvz.ui.library
 import BottomBar
 import android.content.ContentResolver
-import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.*
@@ -37,21 +30,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.core.app.ActivityCompat.startActivityForResult
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.shelvz.R
+
 import com.example.shelvz.data.model.UserFile
 import com.example.shelvz.util.MediaSearchBar
+import com.example.shelvz.util.MyResult
 import com.example.shelvz.util.ShelvzTheme
+import kotlinx.coroutines.launch
 
 // Main Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,6 +56,10 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val contentResolver = LocalContext.current.contentResolver
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val refreshing = remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -68,7 +67,8 @@ fun LibraryScreen(
             try {
                 if (uri != null) {
                     Log.d("FilePicker", "Selected file URI: $uri")
-                    handleSelectedFile(uri, viewModel, contentResolver)
+                    val error = handleSelectedFile(uri, viewModel, contentResolver)
+                    errorMessage = error
                 } else {
                     Log.e("FilePicker", "File selection cancelled or failed.")
                 }
@@ -78,15 +78,45 @@ fun LibraryScreen(
         }
     )
 
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Short)
+            errorMessage = null
+        }
+    }
+
+
     Scaffold(
-        bottomBar = { BottomBar(navController) },
-        topBar = { LibraryAppBar() }
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        bottomBar = { BottomBar(navController) }
     ) { paddingValues ->
-        LibraryPage(modifier = Modifier.padding(paddingValues), viewModel = viewModel, launcher = launcher)
+        PullToRefreshBox(
+            isRefreshing = refreshing.value,
+            onRefresh = {
+                Log.d("RefreshIndicator", "Refreshing state: ${refreshing.value}")
+                scope.launch {
+                        refreshing.value = true
+                        viewModel.refreshLibrary()
+                        refreshing.value = false
+                }
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            LibraryPage(
+                modifier = Modifier.fillMaxSize(),
+                viewModel = viewModel,
+                launcher = launcher
+            )
+        }
     }
 }
 
-
+// manages the UI logic for displaying and interacting with the library's file list
 @Composable
 fun LibraryPage(
     modifier: Modifier = Modifier,
@@ -95,38 +125,52 @@ fun LibraryPage(
 ) {
     // Fetch the full list of files from the ViewModel
     val libraryItems by viewModel.fileList.collectAsState()
-
-    // Filter state
+    val filters by viewModel.filters.collectAsState()
     var selectedFilter by remember { mutableStateOf("All") }
 
     // Dynamically filter the files based on the selected filter
     val filteredItems = when (selectedFilter) {
-        "Books" -> libraryItems.filter { it.type.contains("book", ignoreCase = true) }
-        "Movies" -> libraryItems.filter { it.type.contains("movie", ignoreCase = true) }
-        else -> libraryItems
+        "All" -> libraryItems
+        else -> libraryItems.filter { it.type.contains(selectedFilter, ignoreCase = true) }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-            RecentlyOpenedSection()
-            Spacer(modifier = Modifier.height(16.dp))
-            FilterRow(
-                filters = listOf("All", "Books", "Movies"),
-                selectedFilter = selectedFilter
-            ) {
-                selectedFilter = it
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            LibraryGrid(filteredItems, viewModel)
+        if (filteredItems.isEmpty()) {
+            OnEmptyLibrary(launcher)
         }
-        UploadButton(launcher)
+        else {
+            LazyColumn(modifier = modifier.fillMaxSize(),verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                item { LibraryAppBar() }
+//                Spacer(modifier = Modifier.height(16.dp))
+                item { RecentlyOpenedSection() }
+//                Spacer(modifier = Modifier.height(16.dp))
+                item { FilterRow(filters = filters, selectedFilter = selectedFilter) { selectedFilter = it } }
+//                Spacer(modifier = Modifier.height(16.dp))
+                item { LibraryGrid(filteredItems, viewModel) }
+
+            }
+            UploadButton(launcher)
+        }
+    }
+}
+
+@Composable
+fun OnEmptyLibrary(launcher: ActivityResultLauncher<Array<String>>) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Button(onClick = { launcher.launch(arrayOf("*/*")) }) {
+            Text(text = "Add a document to Library")
+        }
     }
 }
 
 
 @Composable
 fun RecentlyOpenedSection() {
-    val recentlyOpened = listOf("Book 1", "Movie 1", "Book 2")
+    //TODO After opening a file is supported
+    val recentlyOpened = listOf("Book 1", "Book 2", "Book 3")
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val cardSize: Dp = (screenWidth - 32.dp) / 3
     Text(
@@ -166,53 +210,102 @@ fun FilterRow(
                 modifier = Modifier.size(24.dp)
             )
         }
-        items(filters.size) { index ->
-            val filter = filters[index]
-            Button(
-                onClick = { onFilterSelected(filter) },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selectedFilter == filter) Color.Blue else Color.Gray
-                )
-            ) {
-                Text(text = filter, color = Color.White)
+        // forEach approach
+        filters.forEach { filter ->
+            item {
+                Button(
+                    onClick = { onFilterSelected(filter) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selectedFilter == filter) Color.Blue else Color.Gray
+                    )
+                ) {
+                    Text(text = filter, color = Color.White)
+                }
             }
         }
+        // Indexing approach
+//            items(filters.size) { index ->
+//                val filter = filters[index]
+//                Button(
+//                    onClick = { onFilterSelected(filter) },
+//                    colors = ButtonDefaults.buttonColors(
+//                        containerColor = if (selectedFilter == filter) Color.Blue else Color.Gray
+//                    )
+//                ) {
+//                    Text(text = filter, color = Color.White)
+//                }
+//            }
     }
 }
 
-
-
 @Composable
 fun LibraryGrid(filteredItems: List<UserFile>, viewModel: LibraryViewModel) {
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-    val cardSize: Dp = (screenWidth - 32.dp) / 3
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)
     ) {
-        items(filteredItems.size) { index ->
-            val file = filteredItems[index]
-            Card(
-                modifier = Modifier
-                    .size(cardSize, 80.dp)
-                    .clickable {
-                        // Trigger file opening
-//                        viewModel.openFile(file)
-                    },
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    // Display the file's title
-                    Text(text = file.name, maxLines = 1)
+        val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+        val cardSize: Dp = (screenWidth - 32.dp) / 3
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.height(this.maxHeight),
+            contentPadding = PaddingValues(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(filteredItems.size) { index ->
+                val file = filteredItems[index]
+                Card(
+                    modifier = Modifier
+                        .size(cardSize, 80.dp)
+                        .clickable {
+                            // Trigger file opening
+                            // viewModel.openFile(file)
+                        }
+                    ,
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(text = file.name, maxLines = 1)
+                    }
                 }
             }
         }
     }
 }
+
+//
+//@Composable
+//fun LibraryGrid(filteredItems: List<UserFile>, viewModel: LibraryViewModel) {
+//    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+//    val cardSize: Dp = (screenWidth - 32.dp) / 3
+//
+//    LazyVerticalGrid(
+//        columns = GridCells.Fixed(3),
+//        modifier = Modifier.fillMaxSize(),
+//        contentPadding = PaddingValues(8.dp),
+//        verticalArrangement = Arrangement.spacedBy(8.dp),
+//        horizontalArrangement = Arrangement.spacedBy(8.dp)
+//    ) {
+//        items(filteredItems.size) { index ->
+//            val file = filteredItems[index]
+//            Card(
+//                modifier = Modifier
+//                    .size(cardSize, 80.dp)
+//                    .clickable {
+//                        // Trigger file opening
+////                        viewModel.openFile(file)
+//                    },
+//                elevation = CardDefaults.cardElevation(4.dp)
+//            ) {
+//                Box(contentAlignment = Alignment.Center) {
+//                    // Display the file's title
+//                    Text(text = file.name, maxLines = 1)
+//                }
+//            }
+//        }
+//    }
+//}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -295,36 +388,75 @@ fun UploadButton(launcher: ActivityResultLauncher<Array<String>>) {
 }
 
 
-fun handleSelectedFile(uri: Uri, viewModel: LibraryViewModel, contentResolver: ContentResolver) {
-    try {
+fun handleSelectedFile(
+    uri: Uri,
+    viewModel: LibraryViewModel,
+    contentResolver: ContentResolver
+): String? {
+
         val userId = viewModel.loggedInUser.value?.id
-        if (userId != null) {
+
+        if (userId == null) {
+            Log.e("LibraryPage", "User not logged in.")
+            return "User not logged in."
+        }
+
+        return try {
             val fileName = getFileName(uri, contentResolver)
-            val mimeType = contentResolver.getType(uri)
+            val fullMimeType = contentResolver.getType(uri) ?: "unknown/unknown"
+            val (mime, type) = extractMimeAndType(fullMimeType)
             val fileSize = getFileSize(uri, contentResolver)
 
-            Log.d("LibraryPage", "File metadata: Name=$fileName, Type=$mimeType, Size=$fileSize")
 
-            if (fileName != null && mimeType != null && fileSize != null) {
-                val newFile = UserFile(
-                    userId = userId,
-                    uri = uri.toString(),
-                    name = fileName,
-                    type = mimeType,
-                    size = fileSize
-                )
-                viewModel.addFile(newFile)
-                Log.d("LibraryPage", "File added to the library: ${newFile.name}")
-            } else {
-                Log.e("LibraryPage", "Failed to retrieve file metadata.")
+            if (fileName.isNullOrEmpty() || type.isEmpty() || fileSize == null) {
+                Log.e("LibraryPage", "Invalid file metadata: Name=$fileName, Type=$type, Size=$fileSize")
+                return "Invalid file metadata"
             }
-        } else {
-            Log.e("LibraryPage", "User not logged in.")
+
+            val newFile = UserFile(
+                userId = userId,
+                uri = uri.toString(),
+                name = fileName,
+                mime = mime,
+                type = type,
+                size = fileSize
+            )
+
+//            viewModel.addFile(newFile)
+            val result = viewModel.addFile(newFile)
+            if (result is MyResult.Error) {
+                result.exception.message ?: "Failed to add file"
+
+            } else {
+                Log.d("LibraryPage", "File added to the library: ${newFile.name}")
+                null // Return null on success
+            }
+
+        } catch (e: Exception) {
+            Log.e("LibraryPage", "Error processing selected file: ${e.message}", e)
+            "Error processing file: ${e.message}"
         }
-    } catch (e: Exception) {
-        Log.e("LibraryPage", "Error processing selected file: ${e.message}", e)
+}
+
+fun extractMimeAndType(fullMimeType: String): Pair<String, String> {
+    val parts = fullMimeType.split("/")
+    val mime = parts.getOrNull(0) ?: "unknown"
+    val type = parts.getOrNull(1) ?: "unknown"
+    return mime to type
+}
+
+@Composable
+fun HandleAddFileResult(result: MyResult<Unit>, snackbarHostState: SnackbarHostState) {
+    if (result is MyResult.Error) {
+        LaunchedEffect(snackbarHostState) {
+            snackbarHostState.showSnackbar(
+                message = result.exception.message ?: "Failed to add file",
+                duration = SnackbarDuration.Short
+            )
+        }
     }
 }
+
 
 private fun getFileName(uri: Uri, contentResolver: ContentResolver): String? {
     var name: String? = null
@@ -359,6 +491,8 @@ private fun LibraryAppBarPreview() {
         )
     }
 }
+
+
 
 
 
