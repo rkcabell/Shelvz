@@ -19,6 +19,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.*
@@ -78,7 +82,6 @@ fun LibraryScreen(
         }
     )
 
-
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             snackbarHostState.showSnackbar(
@@ -86,8 +89,6 @@ fun LibraryScreen(
                 duration = SnackbarDuration.Short)
             errorMessage = null
         }
-    }
-
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -220,6 +221,20 @@ fun FilterRow(
                     )
                 ) {
                     Text(text = filter, color = Color.White)
+                }
+                items(filters.size) { index ->
+                    Button(
+                        onClick = { selectedFilter = filters[index] },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selectedFilter == filters[index]) Color.Blue else Color.Gray
+                        )
+                    ) {
+                        Text(
+                            text = filters[index],
+                            color = Color.White,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
         }
@@ -456,8 +471,6 @@ fun HandleAddFileResult(result: MyResult<Unit>, snackbarHostState: SnackbarHostS
         }
     }
 }
-
-
 private fun getFileName(uri: Uri, contentResolver: ContentResolver): String? {
     var name: String? = null
     contentResolver.query(uri, null, null, null, null)?.use { cursor ->
@@ -491,9 +504,6 @@ private fun LibraryAppBarPreview() {
         )
     }
 }
-
-
-
 
 
 /*

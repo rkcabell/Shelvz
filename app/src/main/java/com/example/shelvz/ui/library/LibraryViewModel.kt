@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
@@ -56,7 +55,6 @@ class LibraryViewModel @Inject constructor(
         val types = files.map { it.type.replaceFirstChar { char -> char.uppercaseChar() } }.distinct()
         listOf("All") + types
     }.stateIn(viewModelScope, SharingStarted.Lazily, listOf("All"))
-
 
     // Load the logged-in user and their associated files
     init {
