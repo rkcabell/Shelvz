@@ -7,16 +7,20 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Upload
@@ -39,6 +43,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 
@@ -128,30 +136,66 @@ fun LibraryPage(
     val filters by viewModel.filters.collectAsState()
     var selectedFilter by remember { mutableStateOf("All") }
 
+    // Delete mode
+    var isDeleteMode by remember { mutableStateOf(false) }
+    var selectedCard by remember { mutableStateOf<UserFile?>(null) }
+
     // Dynamically filter the files based on the selected filter
     val filteredItems = when (selectedFilter) {
         "All" -> libraryItems
         else -> libraryItems.filter { it.type.contains(selectedFilter, ignoreCase = true) }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+        .fillMaxSize()
+    ) {
+        if (isDeleteMode) {
+            DimmerOverlay(
+                onDismiss = {
+                    Log.d("LibraryGrid", "Dimmer overlay dismissed")
+                    isDeleteMode = false
+                    selectedCard = null
+            })
+        }
         if (filteredItems.isEmpty()) {
             OnEmptyLibrary(launcher)
         }
         else {
-            LazyColumn(modifier = modifier.fillMaxSize(),verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            LazyColumn(
+                modifier = modifier.fillMaxSize().zIndex(if (isDeleteMode) -1f else 0f),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 item { LibraryAppBar() }
-//                Spacer(modifier = Modifier.height(16.dp))
                 item { RecentlyOpenedSection() }
-//                Spacer(modifier = Modifier.height(16.dp))
                 item { FilterRow(filters = filters, selectedFilter = selectedFilter) { selectedFilter = it } }
-//                Spacer(modifier = Modifier.height(16.dp))
-                item { LibraryGrid(filteredItems, viewModel) }
+                item { LibraryGrid(filteredItems,
+                    viewModel,
+                    isDeleteMode = isDeleteMode,
+                    onDeleteModeChange = { isDeleteMode = it },
+                    onCardSelected = { selectedCard = it }) }
 
             }
-            UploadButton(launcher)
+            if (!isDeleteMode) {
+                    UploadButton(launcher)
+            }
+        }
+        if (isDeleteMode) {
+            DeleteButtonOverlay(
+                selectedCard = selectedCard,
+                viewModel = viewModel,
+                onDeleteConfirm = {
+                    isDeleteMode = false
+                    selectedCard = null
+                }
+            )
+        }
+
+        selectedCard?.let { file ->
+            AnimatedSelectedCard(file = file)
         }
     }
+
 }
 
 @Composable
@@ -239,7 +283,13 @@ fun FilterRow(
 }
 
 @Composable
-fun LibraryGrid(filteredItems: List<UserFile>, viewModel: LibraryViewModel) {
+fun LibraryGrid(
+    filteredItems: List<UserFile>,
+    viewModel: LibraryViewModel,
+    isDeleteMode: Boolean,
+    onDeleteModeChange: (Boolean) -> Unit,
+    onCardSelected: (UserFile) -> Unit )
+{
     BoxWithConstraints(
         modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)
     ) {
@@ -258,11 +308,19 @@ fun LibraryGrid(filteredItems: List<UserFile>, viewModel: LibraryViewModel) {
                 Card(
                     modifier = Modifier
                         .size(cardSize, 80.dp)
-                        .clickable {
-                            // Trigger file opening
-                            // viewModel.openFile(file)
-                        }
-                    ,
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = {
+                                    Log.d("LibraryGrid", "Card clicked: ${file.name}")
+                                    // Trigger file opening
+                                    // viewModel.openFile(file)
+                                },
+                                onLongPress = {
+                                    Log.d("LibraryGrid", "Card long-pressed: ${file.name}")
+                                    onDeleteModeChange(true)
+                                    onCardSelected(file)
+                            })
+                        },
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -274,38 +332,64 @@ fun LibraryGrid(filteredItems: List<UserFile>, viewModel: LibraryViewModel) {
     }
 }
 
-//
-//@Composable
-//fun LibraryGrid(filteredItems: List<UserFile>, viewModel: LibraryViewModel) {
-//    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-//    val cardSize: Dp = (screenWidth - 32.dp) / 3
-//
-//    LazyVerticalGrid(
-//        columns = GridCells.Fixed(3),
-//        modifier = Modifier.fillMaxSize(),
-//        contentPadding = PaddingValues(8.dp),
-//        verticalArrangement = Arrangement.spacedBy(8.dp),
-//        horizontalArrangement = Arrangement.spacedBy(8.dp)
-//    ) {
-//        items(filteredItems.size) { index ->
-//            val file = filteredItems[index]
-//            Card(
-//                modifier = Modifier
-//                    .size(cardSize, 80.dp)
-//                    .clickable {
-//                        // Trigger file opening
-////                        viewModel.openFile(file)
-//                    },
-//                elevation = CardDefaults.cardElevation(4.dp)
-//            ) {
-//                Box(contentAlignment = Alignment.Center) {
-//                    // Display the file's title
-//                    Text(text = file.name, maxLines = 1)
-//                }
-//            }
-//        }
-//    }
-//}
+
+@Composable
+fun DeleteButton(
+    selectedCard: UserFile?,
+    viewModel: LibraryViewModel,
+    onDeleteConfirm: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scale = remember { Animatable(0f) }
+    val haptic = LocalHapticFeedback.current
+    LaunchedEffect(Unit) {
+        scale.animateTo(1f, animationSpec = tween(durationMillis = 300))
+    }
+
+    Box(
+        modifier = modifier
+            .padding(16.dp)
+            .size(80.dp)
+            .graphicsLayer(scaleX = scale.value, scaleY = scale.value)
+            .background(Color.Red, shape = CircleShape)
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                selectedCard?.let { file ->
+                    viewModel.deleteFile(file.id)
+                }
+                onDeleteConfirm()
+           },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Delete",
+            color = Color.White,
+            style = MaterialTheme.typography.bodyMedium, // Adjust text style as needed
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+fun DeleteButtonOverlay(
+    selectedCard: UserFile?,
+    viewModel: LibraryViewModel,
+    onDeleteConfirm: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .zIndex(2f)
+    ) {
+        DeleteButton(
+            selectedCard = selectedCard,
+            viewModel = viewModel,
+            onDeleteConfirm = onDeleteConfirm,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+}
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -480,7 +564,33 @@ private fun getFileSize(uri: Uri, contentResolver: ContentResolver): Long? {
     return size
 }
 
-
+@Composable
+fun DimmerOverlay( onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f))
+            .zIndex(1f)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = {
+                        Log.d("LibraryGrid", "Overlay clicked")
+                        onDismiss()
+                    },
+                    onPress = {
+                        // Allow gesture to propagate
+                        tryAwaitRelease()
+                    }
+                )
+            }
+//            .clickable(
+//                indication = null, // Disable ripple effect
+//                interactionSource = remember { MutableInteractionSource() }
+//            ) {
+//                onDismiss() // Handle clicks outside the active elements
+//            }
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
@@ -489,6 +599,44 @@ private fun LibraryAppBarPreview() {
     ShelvzTheme() {
         LibraryAppBar(
         )
+    }
+}
+
+@Composable
+fun AnimatedSelectedCard(
+    file: UserFile,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .zIndex(2f), // Ensure it is above the dimmer
+        contentAlignment = Alignment.Center
+    ) {
+        val scale = remember { Animatable(0f) }
+        LaunchedEffect(file) {
+            scale.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 300)
+            )
+        }
+
+        Card(
+            modifier = Modifier
+                .size(150.dp)
+                .graphicsLayer(
+                    scaleX = scale.value,
+                    scaleY = scale.value
+                ),
+            elevation = CardDefaults.cardElevation(8.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = file.name,
+                    maxLines = 1
+                )
+            }
+        }
     }
 }
 
