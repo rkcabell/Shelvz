@@ -144,68 +144,6 @@ class LibraryViewModel @Inject constructor(
         return combined.distinctBy { it.id }
     }
 
-    // Open a file with Readium and set the current publication
-//    fun openFile(file: UserFile) {
-//        viewModelScope.launch(Dispatchers.IO) {
-//            try {
-//                val publication = when (file.type) {
-//                    "application/epub+zip" -> openEpub(file, epubParser)
-//                    "application/pdf" -> openPdf(file, pdfParser)
-//                    else -> null
-//                }
-//                _currentPublication.value = publication
-//            } catch (e: Exception) {
-//                e.printStackTrace()
-//            }
-//        }
-//    }
-//
-//    private val publicationOpener by lazy {
-//        PublicationOpener(
-//            parsers = listOf(epubParser, pdfParser),
-//            contentProtections = emptyList(),
-//            onCreatePublication = { publication, _ -> publication }
-//        )
-//    }
-//
-//    private suspend fun openEpub(file: UserFile): Publication? {
-//        val epubFile = File(file.uri)
-//        val result = publicationOpener.open(epubFile)
-//        return if (result is Try.Success) result.result else null
-//    }
-//
-//        val result = publicationOpener.open(fetcher)
-//        return if (result is Try.Success) result.result else null
-//    }
-//
-//    private suspend fun openPdf(file: UserFile, pdfParser: PdfParser): Publication? {
-//        val pdfFile = File(file.uri)
-//        val fetcher = FileFetcher(pdfFile)
-//        val publicationOpener = PublicationOpener(
-//            parsers = listOf(pdfParser),
-//            contentProtections = emptyList(),
-//            onCreatePublication = { publication, _ -> publication }
-//        )
-//
-//        val result = publicationOpener.open(fetcher)
-//        return if (result is Try.Success) result.result else null
-//    }
-//
-//    private fun createPdfParser(context: Context): PdfParser {
-//        val pdfFactory = object : PdfDocumentFactory<PdfiumDocument> {
-//            override fun create(link: Link, file: java.io.File): PdfiumDocument {
-//                return PdfiumDocument(
-//                    context = context,
-//                    file = file
-//                )
-//            }
-//        }
-//        return PdfParser(
-//            context = context,
-//            pdfFactory = pdfFactory
-//        )
-//    }
-
 
     fun saveFileToLocalStorage(uri: Uri, context: Context): File {
         val inputStream = context.contentResolver.openInputStream(uri)
@@ -221,18 +159,3 @@ class LibraryViewModel @Inject constructor(
         return destinationFile
     }
 }
-    //Readium open file
-//    fun openFile(uri: Uri, contentResolver: ContentResolver) {
-//        viewModelScope.launch {
-//            try {
-//                val publication = Publication.open(uri, contentResolver).getOrNull()
-//                if (publication != null) {
-//                    // Pass the publication to the Reader screen
-//                    _currentPublication.value = publication
-//                }
-//            } catch (e: Exception) {
-//                e.printStackTrace()
-//            }
-//        }
-//    }
-//}
