@@ -28,6 +28,7 @@ material = "1.12.0"
 retrofit = "2.11.0"
 readium = "3.0.3"
 pdfium = "2.8.2"
+pdfviewer = "2.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -66,6 +67,7 @@ bcrypt = { group = "org.mindrot", name = "jbcrypt", version.ref = "bcrypt"}
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+pdf-viewer = { group = "io.github.afreakyelf", name = "Pdf-Viewer", version.ref = "pdfviewer" }
 #readium-streamer = {group = "org.readium.kotlin-toolkit", name = "readium-streamer", version.ref = "readium"}
 #readium-navigator = {group = "org.readium.kotlin-toolkit", name = "readium-navigator", version.ref = "readium"}
 #readium-shared = {group = "org.readium.kotlin-toolkit", name = "readium-shared", version.ref = "readium"}

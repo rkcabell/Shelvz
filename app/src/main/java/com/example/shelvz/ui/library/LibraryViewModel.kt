@@ -1,10 +1,14 @@
 package com.example.shelvz.ui.library
 
+import android.app.Activity.RESULT_OK
 import android.content.ContentResolver
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.example.shelvz.data.model.UserFile
 import androidx.lifecycle.ViewModel
@@ -13,6 +17,7 @@ import com.example.shelvz.data.model.User
 import com.example.shelvz.data.repository.FileRepository
 import com.example.shelvz.data.repository.UserRepository
 import com.example.shelvz.util.MyResult
+import com.rajat.pdfviewer.compose.PdfRendererViewCompose
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +29,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -50,6 +56,9 @@ class LibraryViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _selectedFile = MutableStateFlow<UserFile?>(null)
+    val selectedFile = _selectedFile.asStateFlow()
+
     // Allows filter row to sort by all uploaded filetypes
     val filters: StateFlow<List<String>> = _fileList.map { files ->
         // capitalize
@@ -63,6 +72,9 @@ class LibraryViewModel @Inject constructor(
         loadLibrary()
     }
 
+    // ====================
+    // User Management
+    // ====================
     private fun loadLibrary() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -83,34 +95,90 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    fun loadAllFiles() {
+    // Refresh the library
+    // delay: allows time for the refreshing state to update the UI
+    fun refreshLibrary() {
         viewModelScope.launch {
-            val allFiles = fileRepository.getAllFiles()
-            _fileList.value = allFiles.distinctBy { it.id }
+            _isLoading.value = true
+            delay(1000)
+            loadLibrary()
+            _isLoading.value = false
         }
     }
 
-    private fun removeDuplicateFiles(files: List<UserFile>): List<UserFile> {
-        return files.distinctBy { it.uri }
-    }
+    // ====================
+    // File Operations
+    // ====================
 
     // Add a new file to the library
     // Added runBlocking to prevent function from being 'suspend'
-     fun addFile(file: UserFile): MyResult<Unit> {
-            return try {
-                val currentFiles = runBlocking { fileRepository.getFilesByUser(file.userId) }
-
+    private fun addFile(file: UserFile): MyResult<Unit> {
+        return try {
+            viewModelScope.launch {
+                val currentFiles = fileRepository.getFilesByUser(file.userId)
                 if (currentFiles.any { it.uri == file.uri }) {
-                    return MyResult.Error(Exception("File already in Library"))
+                    throw Exception("File already exists in the library")
+                }
+                fileRepository.addFile(file)
+                _fileList.value += file
+            }
+            MyResult.Success(Unit)
+        } catch (e: Exception) {
+            Log.e("LibraryViewModel", "Error adding file: ${e.message}")
+            MyResult.Error(e)
+        }
+    }
+
+    private fun saveFileToLocal(context: Context, uri: Uri): File? {
+        return try {
+            val fileName = getFileName(uri, context.contentResolver) ?: "unknown_file"
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val storageDir = File(context.filesDir, "user_files")
+            if (!storageDir.exists()) storageDir.mkdirs()
+
+            val destinationFile = File(storageDir, fileName)
+            inputStream?.use { input ->
+                destinationFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            Log.d("LibraryViewModel", "File saved locally: ${destinationFile.absolutePath}")
+            destinationFile
+        } catch (e: Exception) {
+            Log.e("LibraryViewModel", "Error saving file locally: ${e.message}")
+            null
+        }
+    }
+
+    fun saveAndAddFile(context: Context, uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                _isLoading.value = true
+
+                val localFile = saveFileToLocal(context, uri)
+                if (localFile != null) {
+                    val fileName = localFile.name
+                    val fileSize = localFile.length()
+
+                    val newFile = UserFile(
+                        userId = loggedInUser.value?.id ?: UUID.randomUUID(),
+                        uri = localFile.absolutePath, // Use local path instead of URI
+                        name = fileName,
+                        mime = "application/pdf",
+                        type = "pdf",
+                        size = fileSize
+                    )
+
+                    addFile(newFile)
+                    Log.d("LibraryViewModel", "File saved and added: ${newFile.name}")
                 }
 
-                runBlocking { fileRepository.addFile(file) }
-                _fileList.value = currentFiles + file
-                MyResult.Success(Unit)
             } catch (e: Exception) {
-                e.printStackTrace()
-                MyResult.Error(e)
+                Log.e("LibraryViewModel", "Error saving file: ${e.message}")
+            } finally {
+                _isLoading.value = false
             }
+        }
     }
 
     // Delete a file from the library
@@ -127,35 +195,68 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    // Refresh the library
-    // delay: allows time for the refreshing state to update the UI
-    suspend fun refreshLibrary() {
-        delay(1000)
-        loadLibrary()
-        Log.d("RefreshIndicator", "Finished refreshing library")
+    private fun removeDuplicateFiles(files: List<UserFile>): List<UserFile> {
+        return files.distinctBy { it.uri }
     }
 
-    fun updateFileList(newFiles: List<UserFile>) {
-        _fileList.value = mergeAndDeduplicate(_fileList.value, newFiles)
+    fun pickFile(context: Context, uri: Uri) {
+        try {
+            // Check if the URI supports persistable permissions
+            val isPersistable = (uri.scheme == "content" && uri.authority == "com.android.providers.downloads.documents")
+
+            if (isPersistable) {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    )
+                    Log.d("LibraryViewModel", "Persistable URI permission taken: $uri")
+                } catch (e: SecurityException) {
+                    Log.w("LibraryViewModel", "Persistable permission not supported for URI: $uri")
+                }
+            } else {
+                Log.w("LibraryViewModel", "Non-persistable URI: $uri")
+            }
+
+            // Process the file (temporary access)
+            val fileName = getFileName(uri, context.contentResolver)
+            val fileSize = getFileSize(uri, context.contentResolver)
+            Log.d("LibraryViewModel", "Picked file: Name=$fileName, Size=$fileSize")
+
+        } catch (e: Exception) {
+            Log.e("LibraryViewModel", "Error handling file: ${e.message}")
+        }
     }
 
-    private fun mergeAndDeduplicate(existingFiles: List<UserFile>, newFiles: List<UserFile>): List<UserFile> {
-        val combined = (existingFiles + newFiles)
-        return combined.distinctBy { it.id }
-    }
+    // ====================
+    // Utility Functions
+    // ====================
 
 
-    fun saveFileToLocalStorage(uri: Uri, context: Context): File {
-        val inputStream = context.contentResolver.openInputStream(uri)
-        val storageDir = File(context.filesDir, "bookshelf")
-        if (!storageDir.exists()) storageDir.mkdirs()
+//    fun clearSelectedFile() {
+//        _selectedFile.value = null
+//    }
 
-        val destinationFile = File(storageDir, uri.lastPathSegment ?: "unknown_file")
-        inputStream?.use { input ->
-            destinationFile.outputStream().use { output ->
-                input.copyTo(output)
+
+    private fun getFileName(uri: Uri, contentResolver: ContentResolver): String? {
+        var name: String? = null
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (cursor.moveToFirst() && nameIndex >= 0) {
+                name = cursor.getString(nameIndex)
             }
         }
-        return destinationFile
+        return name
+    }
+
+    private fun getFileSize(uri: Uri, contentResolver: ContentResolver): Long? {
+        var size: Long? = null
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+            if (cursor.moveToFirst() && sizeIndex >= 0) {
+                size = cursor.getLong(sizeIndex)
+            }
+        }
+        return size
     }
 }

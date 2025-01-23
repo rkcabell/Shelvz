@@ -47,6 +47,9 @@ android {
 }
 
 dependencies {
+    //pdf-viewer
+    implementation(libs.pdf.viewer)
+
     //readium
 //    implementation(libs.readium.streamer)
 //    implementation(libs.readium.navigator)
