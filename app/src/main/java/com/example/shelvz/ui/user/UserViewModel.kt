@@ -53,14 +53,6 @@ class UserViewModel @Inject constructor(private val userRepository: UserReposito
         }
     }
 
-    // optional
-//    fun getLoggedInUser(): StateFlow<User?> {
-//        return userRepository.getLoggedInUser().stateIn(
-//            scope = viewModelScope,
-//            started = SharingStarted.WhileSubscribed(5000),
-//            initialValue = null
-//        )
-//    }
 
     fun refreshUserData() {
         viewModelScope.launch {

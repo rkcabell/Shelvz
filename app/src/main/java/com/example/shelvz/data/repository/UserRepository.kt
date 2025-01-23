@@ -2,6 +2,7 @@ package com.example.shelvz.data.repository
 import com.example.shelvz.data.dao.UserDao
 import com.example.shelvz.data.datastore.DataStoreManager
 import com.example.shelvz.data.model.User
+import com.example.shelvz.data.model.UserFile
 import com.example.shelvz.util.MyResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -76,6 +77,27 @@ class UserRepository @Inject constructor(private val userDao: UserDao, private v
         }
     }
 
+    suspend fun updateRecentlyOpened(userId: UUID, newFile: UserFile) {
+        val user = userDao.getUserById(userId)
+        user.let {
+            val updatedRecentlyOpened = it.recentlyOpenedFiles.toMutableList()
+
+            // Check if the file already exists and remove it
+            updatedRecentlyOpened.removeAll { file -> file.uri == newFile.uri }
+
+            // Add the new file to the top
+            updatedRecentlyOpened.add(0, newFile)
+
+            // Limit to 5 files
+            if (updatedRecentlyOpened.size > 5) {
+                updatedRecentlyOpened.removeAt(updatedRecentlyOpened.lastIndex)
+            }
+
+            // Update the user
+            userDao.updateUser(it.copy(recentlyOpenedFiles = updatedRecentlyOpened))
+        }
+    }
+
     suspend fun getUserByName(name: String): User? {
         return try {
             userDao.getUserByName(name)
@@ -129,6 +151,10 @@ class UserRepository @Inject constructor(private val userDao: UserDao, private v
         } catch (e: Exception) {
             MyResult.Error(e)
         }
+    }
+
+    suspend fun updateUser(user: User) {
+        userDao.updateUser(user)
     }
 
 }

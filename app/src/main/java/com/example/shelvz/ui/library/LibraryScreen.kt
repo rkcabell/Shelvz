@@ -48,6 +48,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -57,6 +58,7 @@ import com.example.shelvz.data.model.UserFile
 import com.example.shelvz.util.MediaSearchBar
 import com.example.shelvz.util.MyResult
 import com.example.shelvz.util.ShelvzTheme
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -87,13 +89,11 @@ fun LibraryScreen(
         bottomBar = { BottomBar(navController) }
     ) { paddingValues ->
         PullToRefreshBox(
-            isRefreshing = refreshing.value,
+            isRefreshing = viewModel.isLoading.collectAsState().value,
             onRefresh = {
                 Log.d("LibraryScreen", "Refreshing library...")
                 scope.launch {
-                    refreshing.value = true
                     viewModel.refreshLibrary()
-                    refreshing.value = false
                 }
             },
             modifier = Modifier
@@ -156,7 +156,7 @@ fun LibraryFileList(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { LibraryAppBar() }
-        item { RecentlyOpenedSection() }
+        item { RecentlyOpenedSection(viewModel = viewModel) }
         item { FilterRow(filters = filters, selectedFilter = selectedFilter, onFilterSelected) }
         item {
             LibraryGrid(
@@ -168,7 +168,7 @@ fun LibraryFileList(
         }
     }
 
-    if (!isDeleteMode) {
+    if (!isDeleteMode && selectedCard == null) {
         UploadButton(launcher)
     }
 
@@ -239,26 +239,49 @@ fun FilterRow(
 }
 
 @Composable
-fun RecentlyOpenedSection() {
-    val recentlyOpened = listOf("Book 1", "Book 2", "Book 3")
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-    val cardSize: Dp = (screenWidth - 32.dp) / 3
+fun RecentlyOpenedSection(viewModel: LibraryViewModel) {
+    val recentlyOpened by viewModel.loggedInUser
+        .map { user ->
+            Log.d("RecentlyOpenedDebug", "User Files: ${user?.recentlyOpenedFiles}")
+            user?.recentlyOpenedFiles ?: emptyList()
+        }
+        .collectAsState(initial = emptyList())
+
+
     Text(
         text = "Recently Opened",
         style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold),
         modifier = Modifier.padding(bottom = 8.dp)
     )
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(recentlyOpened.size) { index ->
-            Card(
-                modifier = Modifier.size(cardSize, 60.dp),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(text = recentlyOpened[index])
+
+    if (recentlyOpened.isNotEmpty()) {
+        val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+        val cardSize: Dp = (screenWidth - 32.dp) / 3
+
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(recentlyOpened.size) { index ->
+                val file = recentlyOpened[index]
+                Card(
+                    modifier = Modifier.size(cardSize, 60.dp).clickable {
+                        // Handle file re-opening here
+                        Log.d("RecentlyOpened", "File clicked: ${file.name}")
+                    },
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(text = file.name, maxLines = 1)
+                    }
                 }
             }
         }
+    } else {
+        // Fallback text when the list is empty
+        Text(
+            text = "No recently opened files.",
+            style = TextStyle(fontSize = 16.sp, fontStyle = FontStyle.Italic, color = Color.Gray),
+            modifier = Modifier.padding(top = 8.dp)
+        )
     }
 }
 
@@ -335,8 +358,8 @@ fun LibraryGrid(
                             detectTapGestures(
                                 onTap = {
                                     Log.d("LibraryGrid", "Card clicked: ${file.name}")
-                                    selectedFile = file // Directly set the selected file
-                                    viewModel.pickFile(context, Uri.parse(file.uri))
+                                    selectedFile = file
+                                    viewModel.markFileAsRecentlyOpened(file)
                                 },
                                 onLongPress = {
                                     Log.d("LibraryGrid", "Card long-pressed: ${file.name}")

@@ -20,6 +20,8 @@ data class User(
     val library: List<UserFile>,
     val favorites: List<UUID>,
     val favoriteGenres: List<String>, //enum?
-    val isLoggedIn: Boolean = false
+    val isLoggedIn: Boolean = false,
+    val recentlyOpenedFiles: List<UserFile> = emptyList()
+
 )
 

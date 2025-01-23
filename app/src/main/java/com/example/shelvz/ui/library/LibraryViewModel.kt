@@ -75,7 +75,7 @@ class LibraryViewModel @Inject constructor(
     // ====================
     // User Management
     // ====================
-    private fun loadLibrary() {
+    fun loadLibrary() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -100,7 +100,6 @@ class LibraryViewModel @Inject constructor(
     fun refreshLibrary() {
         viewModelScope.launch {
             _isLoading.value = true
-            delay(1000)
             loadLibrary()
             _isLoading.value = false
         }
@@ -181,16 +180,51 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    // Delete a file from the library
-    fun deleteFile(fileId: UUID) {
-        viewModelScope.launch {
-            try {
-                fileRepository.deleteFile(fileId)
-                _loggedInUser.value?.id?.let { userId ->
-                    _fileList.value = fileRepository.getFilesByUser(userId)
+    fun markFileAsRecentlyOpened(file: UserFile) {
+        viewModelScope.launch(Dispatchers.IO) {
+            loggedInUser.value?.let { user ->
+                val updatedRecentlyOpened = user.recentlyOpenedFiles.toMutableList()
+
+                // Remove the file if it already exists
+                updatedRecentlyOpened.removeAll { it.uri == file.uri }
+
+                // Add the file to the top
+                updatedRecentlyOpened.add(0, file)
+
+                // Limit the list to 5 items
+                if (updatedRecentlyOpened.size > 5) {
+                    updatedRecentlyOpened.removeAt(updatedRecentlyOpened.lastIndex)
                 }
+
+                // Update the user in the database
+                val updatedUser = user.copy(recentlyOpenedFiles = updatedRecentlyOpened)
+                userRepository.updateUser(updatedUser)
+
+                // Update the state
+                _loggedInUser.value = updatedUser
+
+                Log.d("LibraryViewModel", "Marked file as recently opened: ${file.name}")
+            }
+        }
+    }
+
+    fun deleteFile(fileId: UUID) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Remove file from the library
+                fileRepository.deleteFile(fileId)
+
+                // Remove file from the recentlyOpenedFiles list
+                loggedInUser.value?.let { user ->
+                    val updatedRecentlyOpened = user.recentlyOpenedFiles.filterNot { it.id == fileId }
+                    userRepository.updateUser(user.copy(recentlyOpenedFiles = updatedRecentlyOpened))
+                    Log.d("LibraryViewModel", "File removed from recently opened: $fileId")
+                }
+
+                // Reload the library
+                loadLibrary()
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("LibraryViewModel", "Error deleting file: ${e.message}", e)
             }
         }
     }
@@ -199,34 +233,6 @@ class LibraryViewModel @Inject constructor(
         return files.distinctBy { it.uri }
     }
 
-    fun pickFile(context: Context, uri: Uri) {
-        try {
-            // Check if the URI supports persistable permissions
-            val isPersistable = (uri.scheme == "content" && uri.authority == "com.android.providers.downloads.documents")
-
-            if (isPersistable) {
-                try {
-                    context.contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                    )
-                    Log.d("LibraryViewModel", "Persistable URI permission taken: $uri")
-                } catch (e: SecurityException) {
-                    Log.w("LibraryViewModel", "Persistable permission not supported for URI: $uri")
-                }
-            } else {
-                Log.w("LibraryViewModel", "Non-persistable URI: $uri")
-            }
-
-            // Process the file (temporary access)
-            val fileName = getFileName(uri, context.contentResolver)
-            val fileSize = getFileSize(uri, context.contentResolver)
-            Log.d("LibraryViewModel", "Picked file: Name=$fileName, Size=$fileSize")
-
-        } catch (e: Exception) {
-            Log.e("LibraryViewModel", "Error handling file: ${e.message}")
-        }
-    }
 
     // ====================
     // Utility Functions

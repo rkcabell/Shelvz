@@ -15,6 +15,7 @@ class Converters {
     private val typeListString = object : TypeToken<List<String>>() {}.type
     private val typeListUuid = object : TypeToken<List<UUID>>() {}.type
     private val typeListReview = object : TypeToken<List<Review>>() {}.type
+    private val userFileType = object : TypeToken<List<UserFile>>() {}.type
 
     // 1) UUID <-> String
     @TypeConverter
@@ -80,17 +81,14 @@ class Converters {
         } ?: emptyList()
     }
 
-    // 5) List<Review> <-> JSON
     @TypeConverter
-    fun fromFileList(file: List<UserFile>): String? {
-        return gson.toJson(file)
+    fun fromUserFileList(userFiles: List<UserFile>?): String? {
+        return gson.toJson(userFiles)
     }
 
     @TypeConverter
-    fun toFileList(json: String?): List<UserFile> {
-        return json?.let {
-            gson.fromJson(it, typeListReview)
-        } ?: emptyList()
+    fun toUserFileList(json: String?): List<UserFile>? {
+        return gson.fromJson(json, userFileType)
     }
 
 }
