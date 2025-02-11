@@ -1,5 +1,6 @@
 package com.example.shelvz.data.repository
 
+import android.util.Log
 import android.webkit.MimeTypeMap
 import com.example.shelvz.data.dao.FileDao
 import com.example.shelvz.data.model.UserFile
@@ -17,8 +18,10 @@ class FileRepository @Inject constructor(private val fileDao: FileDao) {
         return fileDao.getFilesByUser(userId)
     }
 
-    suspend fun deleteFile(fileId: UUID) {
-        fileDao.deleteFile(fileId)
+    suspend fun deleteFile(file: UserFile) {
+        fileDao.deleteFile(file.id)
+        val remainingFiles = fileDao.getAllFiles()
+        Log.d("FileRepository", "Remaining files in database: ${remainingFiles.map { it.name }}")
     }
 
     suspend fun getAllFiles(): List<UserFile> {

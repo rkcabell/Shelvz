@@ -2,11 +2,14 @@ package com.example.shelvz.data.remote
 
 import androidx.room.PrimaryKey
 import com.example.shelvz.data.model.Book
+import com.example.shelvz.data.model.MediaDetails
+import com.example.shelvz.data.model.MediaType
 import com.google.gson.annotations.SerializedName
 import retrofit2.http.GET
 import retrofit2.http.Query
 import retrofit2.Call
 import retrofit2.http.Path
+import java.time.LocalDate
 import java.util.UUID
 
 interface BookApi {
@@ -29,11 +32,12 @@ data class BookJson(
     @SerializedName("publisher") val publisher: String,
     @SerializedName("page_count") val pageCount: Int,
     @SerializedName("edition") val edition: Int,
-    @SerializedName("subject") val subject: String
-) {
-//    val coverUrl: String
-//        get() = "https://covers.openlibrary.org/b/id/$coverId-L.jpg"
-}
+    @SerializedName("subject") val subject: String,
+    @SerializedName("summary") val summary: String?,
+    @SerializedName("release_date") val releaseDate: LocalDate?,
+    @SerializedName("average_rating") val averageRating: Float?,
+    @SerializedName("thumbnail_path") val thumbnailPath: String?
+)
 
 data class BookResponse(
     @SerializedName("works") val works: List<BookJson>
@@ -55,14 +59,22 @@ data class BookDto(
 object BookMapper {
     fun mapToEntity(json: BookJson): Book {
         return Book(
-            mediaId = UUID.randomUUID(), // Directly use the UUID from BookJson
-            author = json.author,
+            mediaId = json.mediaId,
             title = json.title,
+            author = json.author,
             isbn = json.isbn,
             publisher = json.publisher,
             pageCount = json.pageCount,
             edition = json.edition,
-            subject = json.subject
+            subject = json.subject,
+            media = MediaDetails(
+                title = json.title, // Still map title to MediaDetails for consistency
+                summary = "",
+                releaseDate = LocalDate.now(),
+                mediaType = MediaType.BOOK,
+                averageRating = 0.0f,
+                thumbnailPath = ""
+            )
         )
     }
 }

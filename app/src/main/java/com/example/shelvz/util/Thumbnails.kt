@@ -3,7 +3,7 @@ package com.example.shelvz.util
 import com.example.shelvz.R
 
 object Thumbnails {
-    val thumbnailMap = mapOf(
+    private val thumbnailMap = mapOf(
         "Arts" to R.drawable.thumbnail_arts,
         "Animals" to R.drawable.thumbnail_animals,
         "Fiction" to R.drawable.thumbnail_fiction,
@@ -18,7 +18,7 @@ object Thumbnails {
         "Textbooks" to R.drawable.thumbnail_textbooks
     )
 
-    val defaultThumbnail = R.drawable.thumbnail_default
+    private val defaultThumbnail = R.drawable.thumbnail_default
 
     fun getThumbnail(subject: String): Int {
         return thumbnailMap[subject] ?: defaultThumbnail

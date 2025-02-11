@@ -3,6 +3,7 @@ package com.example.shelvz.data.model
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.ForeignKey.Companion.CASCADE
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.util.UUID
 
@@ -13,9 +14,10 @@ import java.util.UUID
             entity = User::class,
             parentColumns = ["id"],
             childColumns = ["userId"],
-            onDelete = CASCADE
+            onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["userId"])]
 )
 data class UserFile(
     @PrimaryKey val id: UUID = UUID.randomUUID(),

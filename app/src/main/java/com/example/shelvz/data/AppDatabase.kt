@@ -27,7 +27,7 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Inject
 import javax.inject.Singleton
 
-@Database(entities = [User::class, Media::class, Book::class, Movie::class, Review::class, UserFile::class], version = 2, exportSchema = false)
+@Database(entities = [User::class, Media::class, Book::class, Movie::class, Review::class, UserFile::class], version = 1, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao

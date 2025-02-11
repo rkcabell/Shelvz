@@ -3,6 +3,8 @@ package com.example.shelvz.ui.discover
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shelvz.data.model.Book
+import com.example.shelvz.data.model.MediaDetails
+import com.example.shelvz.data.model.MediaType
 import com.example.shelvz.data.repository.BookRepository
 import com.example.shelvz.util.MyResult
 import com.example.shelvz.util.Subjects
@@ -10,6 +12,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
 
@@ -39,7 +42,15 @@ class DiscoverViewModel @Inject constructor(
                 pageCount = 100 + index,
                 edition = 1,
                 subject = Subjects.resolveSubject(subject),
-                title = "$subject Book $index"
+                title = "$subject Book $index",
+                media = MediaDetails( // Provide dummy data for MediaDetails
+                    title = "$subject Book $index",
+                    summary = "This is a summary for $subject Book $index.",
+                    releaseDate = LocalDate.now(),
+                    mediaType = MediaType.BOOK,
+                    averageRating = (3.0 + index % 2).toFloat(),
+                    thumbnailPath = "/dummy/path/to/thumbnail$index.png"
+                )
             )
         }
     }

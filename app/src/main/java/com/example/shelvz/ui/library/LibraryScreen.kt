@@ -1,10 +1,8 @@
 package com.example.shelvz.ui.library
 
 import BottomBar
-import android.content.ContentResolver
-import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
-import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
@@ -14,16 +12,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.outlined.FilterList
@@ -35,15 +29,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -55,9 +45,9 @@ import androidx.navigation.NavController
 import com.rajat.pdfviewer.compose.PdfRendererViewCompose
 
 import com.example.shelvz.data.model.UserFile
+import com.example.shelvz.util.DetailedCard
 import com.example.shelvz.util.MediaSearchBar
-import com.example.shelvz.util.MyResult
-import com.example.shelvz.util.ShelvzTheme
+import com.example.shelvz.util.extractPdfThumbnail
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.File
@@ -69,16 +59,33 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    val refreshing = remember { mutableStateOf(false) }
+    val isRefreshing = viewModel.isLoading.collectAsState(initial = false).value
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val selectedCard by viewModel.selectedCard.collectAsState()
+    val selectedFile by viewModel.selectedFile.collectAsState()
+
+    // Attempt at solving the refresh icon lingering
+    LaunchedEffect(viewModel.isLoading.collectAsState().value) {
+        if (!viewModel.isLoading.value) {
+            Log.d("LibraryScreen", "Refreshing completed, hiding icon")
+        }
+    }
+
+    val snackbarMessage by viewModel.snackbarMessage.collectAsState()
+
+    snackbarMessage?.let { message ->
+        LaunchedEffect(message) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearSnackbarMessage()
+        }
+    }
 
     // File picker launcher
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
         onResult = { uri ->
             uri?.let {
-                Log.d("LibraryScreen", "File picked: $uri")
                 viewModel.saveAndAddFile(context, uri)
             } ?: Log.e("LibraryScreen", "No file selected or selection canceled.")
         }
@@ -89,7 +96,7 @@ fun LibraryScreen(
         bottomBar = { BottomBar(navController) }
     ) { paddingValues ->
         PullToRefreshBox(
-            isRefreshing = viewModel.isLoading.collectAsState().value,
+            isRefreshing,
             onRefresh = {
                 Log.d("LibraryScreen", "Refreshing library...")
                 scope.launch {
@@ -102,18 +109,28 @@ fun LibraryScreen(
         ) {
             LibraryContent(
                 viewModel = viewModel,
-                launcher = filePickerLauncher,
-                snackbarHostState = snackbarHostState
+                launcher = filePickerLauncher
             )
         }
+    }
+
+    selectedCard?.let { file ->
+        AnimatedSelectedCard(file = file, viewModel = viewModel)
+    }
+
+    // Display the selected file (PDF Viewer)
+    selectedFile?.let { file ->
+        PDFViewer(
+            file = file,
+            onClose = { viewModel.clearSelectedFile() }
+        )
     }
 }
 
 @Composable
 fun LibraryContent(
     viewModel: LibraryViewModel,
-    launcher: ActivityResultLauncher<Array<String>>,
-    snackbarHostState: SnackbarHostState
+    launcher: ActivityResultLauncher<Array<String>>
 ) {
     val libraryItems by viewModel.fileList.collectAsState()
     val filters by viewModel.filters.collectAsState()
@@ -148,8 +165,7 @@ fun LibraryFileList(
     launcher: ActivityResultLauncher<Array<String>>,
     viewModel: LibraryViewModel
 ) {
-    var isDeleteMode by remember { mutableStateOf(false) }
-    var selectedCard by remember { mutableStateOf<UserFile?>(null) }
+    val isDeleteMode by viewModel.isDeleteMode.collectAsState()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -161,36 +177,29 @@ fun LibraryFileList(
         item {
             LibraryGrid(
                 filteredItems = filteredItems,
-                viewModel = viewModel,
-                onDeleteModeChange = { isDeleteMode = it },
-                onCardSelected = { selectedCard = it }
+                viewModel = viewModel
             )
         }
     }
 
-    if (!isDeleteMode && selectedCard == null) {
+    if (!isDeleteMode) {
         UploadButton(launcher)
     }
 
     if (isDeleteMode) {
         DimmerOverlay(
             onDismiss = {
-                Log.d("LibraryGrid", "Dimmer overlay dismissed")
-                isDeleteMode = false
-                selectedCard = null
+                Log.d("LibraryScreen", "Dimmer overlay dismissed")
+                viewModel.setDeleteMode(false)
+                viewModel.clearSelectedCard()
             })
         DeleteButtonOverlay(
-            selectedCard = selectedCard,
             viewModel = viewModel,
             onDeleteConfirm = {
-                isDeleteMode = false
-                selectedCard = null
+                viewModel.setDeleteMode(false)
+                viewModel.clearSelectedCard()
             }
         )
-    }
-
-    selectedCard?.let { file ->
-        AnimatedSelectedCard(file = file)
     }
 }
 
@@ -266,6 +275,7 @@ fun RecentlyOpenedSection(viewModel: LibraryViewModel) {
                     modifier = Modifier.size(cardSize, 60.dp).clickable {
                         // Handle file re-opening here
                         Log.d("RecentlyOpened", "File clicked: ${file.name}")
+                        viewModel.selectFile(file)
                     },
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {
@@ -288,92 +298,59 @@ fun RecentlyOpenedSection(viewModel: LibraryViewModel) {
 @Composable
 fun LibraryGrid(
     filteredItems: List<UserFile>,
-    viewModel: LibraryViewModel,
-    onDeleteModeChange: (Boolean) -> Unit,
-    onCardSelected: (UserFile) -> Unit
+    viewModel: LibraryViewModel
 ) {
-    var selectedFile by remember { mutableStateOf<UserFile?>(null) }
+
     val context = LocalContext.current
-    val isLoading by viewModel.isLoading.collectAsState()
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val cardSize = viewModel.calculateCardSize(screenWidth)
 
-    selectedFile?.let { file ->
-        val localFile = File(context.filesDir, "user_files/${file.name}")
+    LaunchedEffect(filteredItems) {
+        viewModel.logFilteredItems(filteredItems)
+    }
 
-        if (isLoading) {
-            // Show a loading indicator while checking or processing the file
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else if (localFile.exists()) {
-            // Render the PDF from the local file
-            Box(modifier = Modifier.fillMaxSize()) {
-                PdfRendererViewCompose(
-                    modifier = Modifier.fillMaxSize(),
-                    uri = Uri.fromFile(localFile) // Use the local file's URI
-                )
-                FloatingActionButton(
-                    onClick = { selectedFile = null },
-                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
-                ) {
-                    Text("Close")
-                }
-            }
-        } else {
-            // If the file is not found locally, show an error and allow re-selection
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("File not found locally. Please reselect or reupload.")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = {
-                        // Trigger the file save process
-                        viewModel.saveAndAddFile(context, Uri.parse(file.uri))
-                    }) {
-                        Text("Retry")
-                    }
-                }
-            }
-        }
-    } ?: BoxWithConstraints(
+    BoxWithConstraints(
         modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp) // Restrict max height
     ) {
-        val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-        val cardSize: Dp = (screenWidth - 32.dp) / 3 // Calculate card size dynamically
-
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
-            modifier = Modifier.height(this.maxHeight), // Apply constrained height
+            modifier = Modifier.height(this.maxHeight),
             contentPadding = PaddingValues(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(filteredItems.size) { index ->
+            items(
+                filteredItems.size, key = { index -> filteredItems[index].id }
+            ) { index ->
                 val file = filteredItems[index]
-                Card(
+                val thumbnailMap by viewModel.thumbnails.collectAsState()
+                val thumbnail = thumbnailMap[file.id.toString()]
+
+                // Load thumbnail when the file appears
+                LaunchedEffect(file) {
+                    viewModel.loadThumbnail(file, context)
+                }
+
+                DetailedCard(
+                    title = file.name,
+                    thumbnail = thumbnail,
                     modifier = Modifier
-                        .size(cardSize, 80.dp)
+                        .size(cardSize, 120.dp)
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
                                     Log.d("LibraryGrid", "Card clicked: ${file.name}")
-                                    selectedFile = file
+                                    viewModel.selectFile(file)
                                     viewModel.markFileAsRecentlyOpened(file)
                                 },
                                 onLongPress = {
                                     Log.d("LibraryGrid", "Card long-pressed: ${file.name}")
-                                    onDeleteModeChange(true)
-                                    onCardSelected(file)
+                                    viewModel.setDeleteMode(true)
+                                    viewModel.selectCard(file)
                                 }
                             )
-                        },
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(file.name, maxLines = 1)
-                    }
-                }
+                        }
+                )
             }
         }
     }
@@ -418,8 +395,36 @@ fun UploadButton(launcher: ActivityResultLauncher<Array<String>>) {
 }
 
 @Composable
+fun PDFViewer(file: UserFile, onClose: () -> Unit) {
+    val context = LocalContext.current
+    val localFile = File(context.filesDir, "user_files/${file.name}")
+
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.8f))) {
+        if (localFile.exists()) {
+            PdfRendererViewCompose(
+                modifier = Modifier.fillMaxSize(),
+                uri = Uri.fromFile(localFile)
+            )
+        } else {
+            Text(
+                text = "File not found.",
+                modifier = Modifier.align(Alignment.Center),
+                color = Color.White
+            )
+        }
+        FloatingActionButton(
+            onClick = { onClose() },
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+        ) {
+            Text("Close")
+        }
+    }
+}
+
+@Composable
 fun AnimatedSelectedCard(
     file: UserFile,
+    viewModel: LibraryViewModel,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -436,22 +441,25 @@ fun AnimatedSelectedCard(
             )
         }
 
-        Card(
+        val thumbnailMap by viewModel.thumbnails.collectAsState()
+        val thumbnail = thumbnailMap[file.id.toString()]
+        val context = LocalContext.current
+
+        // Load thumbnail if not already available
+        LaunchedEffect(file) {
+            viewModel.loadThumbnail(file, context)
+        }
+
+        DetailedCard(
+            title = file.name,
+            thumbnail = thumbnail,
             modifier = Modifier
-                .size(150.dp)
+                .size(250.dp)
                 .graphicsLayer(
                     scaleX = scale.value,
                     scaleY = scale.value
-                ),
-            elevation = CardDefaults.cardElevation(8.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = file.name,
-                    maxLines = 1
                 )
-            }
-        }
+        )
     }
 }
 
@@ -496,7 +504,7 @@ fun DimmerOverlay( onDismiss: () -> Unit) {
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = {
-                        Log.d("LibraryGrid", "Overlay clicked")
+                        Log.d("LibraryScreen", "Overlay clicked")
                         onDismiss()
                     },
                     onPress = {
@@ -510,21 +518,31 @@ fun DimmerOverlay( onDismiss: () -> Unit) {
 
 @Composable
 fun DeleteButtonOverlay(
-    selectedCard: UserFile?,
     viewModel: LibraryViewModel,
     onDeleteConfirm: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .zIndex(2f)
-    ) {
-        DeleteButton(
-            selectedCard = selectedCard,
-            viewModel = viewModel,
-            onDeleteConfirm = onDeleteConfirm,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+    val selectedCard by viewModel.selectedCard.collectAsState()
+
+    if (selectedCard != null) { // Show overlay only if a card is selected
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .zIndex(2f)
+        ) {
+
+//            AnimatedSelectedCard(file = selectedCard)
+
+            DeleteButton(
+                selectedCard = selectedCard,
+                viewModel = viewModel,
+                onDeleteConfirm = {
+                    viewModel.clearSelectedCard()
+                    viewModel.setDeleteMode(false)
+                    onDeleteConfirm()
+                },
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
     }
 }
 
@@ -551,7 +569,7 @@ fun DeleteButton(
             .clickable {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 selectedCard?.let { file ->
-                    viewModel.deleteFile(file.id)
+                    viewModel.deleteFile(file)
                 }
                 onDeleteConfirm()
             },

@@ -1,5 +1,6 @@
 package com.example.shelvz.util
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -31,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -139,6 +141,61 @@ fun DetailedBookCard(bookTitle: String, subject: String) {
             ) {
                 Text(
                     text = bookTitle,
+                    fontSize = 14.sp,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Clip,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DetailedCard(
+    title: String,
+    thumbnail: Bitmap?,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        elevation = CardDefaults.cardElevation(4.dp),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Display the PDF thumbnail if available, otherwise show a placeholder
+            if (thumbnail != null) {
+                Image(
+                    bitmap = thumbnail.asImageBitmap(),
+                    contentDescription = "PDF Thumbnail",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.7f),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                val placeholderRes = Thumbnails.getThumbnail("default")
+                Image(
+                    painter = painterResource(id = placeholderRes),
+                    contentDescription = "placeholder",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(0.7f),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(0.3f)
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = title,
                     fontSize = 14.sp,
                     color = Color.White,
                     maxLines = 2,

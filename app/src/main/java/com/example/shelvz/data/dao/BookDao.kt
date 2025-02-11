@@ -26,10 +26,15 @@ interface BookDao {
             "    WHERE b.mediaId = :mediaId")
     suspend fun getBookSummaryById(mediaId: UUID): String
 
-    @Query("SELECT * \n" +
-            "    FROM Media m \n" +
-            "    INNER JOIN books b ON m.subject = b.subject\n" +
-            "    WHERE b.subject = :subject")
+    @Query("""
+    SELECT b.*, 
+           m.title AS mediaTitle, m.summary AS summary, 
+           m.releaseDate AS releaseDate, m.mediaType AS mediaType, 
+           m.averageRating AS averageRating, m.thumbnailPath AS thumbnailPath
+    FROM Media m
+    INNER JOIN books b ON m.mediaId = b.mediaId
+    WHERE b.subject = :subject
+""")
     suspend fun getBooksBySubject(subject: String): List<Book>
 }
 
