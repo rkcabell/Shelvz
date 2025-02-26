@@ -49,7 +49,7 @@ Gradle 7.0+
 
 Clone the repository:
 
-git clone https://github.com/yourusername/shelvz.git
+git clone https://github.com/rkcabell/Shelvz.git
 
 Open the project in Android Studio.
 
